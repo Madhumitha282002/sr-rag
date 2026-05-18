@@ -1,0 +1,25 @@
+# Data and models
+data/raw_papers/
+vector_store/
+*.pkl
+*.sqlite
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
