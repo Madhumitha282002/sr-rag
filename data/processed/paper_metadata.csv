@@ -1,0 +1,11 @@
+file_name,title,authors,year,method,venue,datasets,key_contribution,source_url
+srcnn_2014.pdf,Learning a Deep Convolutional Network for Image Super-Resolution,Dong et al.,2014,SRCNN,ECCV,"Set5, Set14",First end-to-end CNN for SR,https://arxiv.org/abs/1501.00092
+vdsr_2015.pdf,Accurate Image Super-Resolution Using Very Deep Convolutional Networks,Kim et al.,2015,VDSR,CVPR,"Set5, Set14, BSD100","Very deep residual network for SR, gradient clipping",https://arxiv.org/abs/1511.04587
+srgan_2016.pdf,Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network,Ledig et al.,2016,SRGAN / SRResNet,CVPR,"Set5, BSD100, ImageNet",GAN + perceptual loss for photo-realistic SR,https://arxiv.org/abs/1609.04802
+edsr_2017.pdf,Enhanced Deep Residual Networks for Single Image Super-Resolution,Lim et al.,2017,EDSR,CVPRW,"DIV2K, Set5, Set14, BSD100","Removes batch norm from ResNet, winner of NTIRE 2017",https://arxiv.org/abs/1707.02921
+rcan_2018.pdf,Image Super-Resolution Using Very Deep Residual Channel Attention Networks,Zhang et al.,2018,RCAN,ECCV,"Set5, Set14, BSD100, Urban100, Manga109",Channel attention mechanism for SR,https://arxiv.org/abs/1807.02758
+esrgan_2018.pdf,ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks,Wang et al.,2018,ESRGAN,ECCVW,"DIV2K, Flickr2K","RRDB architecture, relativistic discriminator, improved SRGAN",https://arxiv.org/abs/1809.00219
+rdn_2018.pdf,Residual Dense Network for Image Super-Resolution,Zhang et al.,2018,RDN,CVPR,"Set5, Set14, BSD100, Urban100, Manga109",Dense connections across residual blocks for SR,https://arxiv.org/abs/1802.08797
+realesrgan_2021.pdf,Real-ESRGAN: Training Real-World Blind Super-Resolution with Pure Synthetic Data,Wang et al.,2021,Real-ESRGAN,ICCVW,"DIV2K, Flickr2K, OST",Practical blind SR with high-order degradation pipeline,https://arxiv.org/abs/2107.10833
+swinir_2021.pdf,SwinIR: Image Restoration Using Swin Transformer,Liang et al.,2021,SwinIR,ICCVW,"DIV2K, Flickr2K, Set5, Set14, BSD100, Urban100, Manga109",First strong transformer backbone for image restoration,https://arxiv.org/abs/2108.10257
+hat_2022.pdf,Activating More Pixels in Image Super-Resolution Transformer,Chen et al.,2022,HAT,CVPR,"DIV2K, Flickr2K, Set5, Set14, BSD100, Urban100, Manga109","Hybrid attention transformer, SOTA at release",https://arxiv.org/abs/2205.04437
