@@ -1,15 +1,13 @@
 """
-src/generation/answer_generator.py
-------------------------------------
-Builds a prompt from retrieved chunks and calls an LLM to generate
-a grounded answer. Supports OpenAI, Gemini, Ollama, and a mock mode
-for development without an API key.
+src/generation/answer_generator.py  (Day 10 update)
+-----------------------------------------------------
+Updated to delegate all prompt logic to prompt_manager.py.
 
-Set LLM_PROVIDER in .env to switch providers:
-    LLM_PROVIDER=openai     + OPENAI_API_KEY=sk-...
-    LLM_PROVIDER=gemini     + GEMINI_API_KEY=...
-    LLM_PROVIDER=ollama     (no key needed, runs locally)
-    LLM_PROVIDER=mock       (default when no key is set)
+Changes from Day 6:
+- build_prompt() removed — now lives in prompt_manager.py
+- generate_answer() accepts a `prompt_template` arg for A/B testing
+- Refusal logic integrated: skips LLM call when corpus has no good match
+- Context limiter logs truncation events to logs/query_log.jsonl
 """
 
 from __future__ import annotations
@@ -21,87 +19,25 @@ import time
 from pathlib import Path
 from typing import Any
 
+from src.generation.prompt_manager import build_prompt, REFUSAL_MESSAGE
+
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# System prompt
-# ---------------------------------------------------------------------------
-
-SYSTEM_PROMPT = """You are an expert assistant on image super-resolution (SR) research.
-You answer questions strictly based on the provided paper excerpts.
-
-Rules:
-- Ground every claim in the provided context. Cite sources as [1], [2], etc.
-- If the context does not contain enough information, say so clearly.
-- Do not hallucinate methods, numbers, or paper names not present in the context.
-- Be concise and precise. Use technical language appropriate for ML researchers.
-- When comparing methods, structure your answer clearly.
-"""
 
 # ---------------------------------------------------------------------------
-# Context builder
+# Provider implementations (unchanged from Day 6)
 # ---------------------------------------------------------------------------
 
-MAX_CONTEXT_CHARS = 6000   # ~1500 tokens — safe for gpt-4o-mini context window
-
-
-def build_prompt(
-    question: str,
-    retrieved_chunks: list[dict[str, Any]],
-) -> tuple[str, list[dict[str, Any]]]:
-    """
-    Build the user prompt from retrieved chunks.
-    Chunks are included in similarity order until MAX_CONTEXT_CHARS is reached.
-    Returns (prompt_text, included_chunks).
-    """
-    included, char_budget = [], MAX_CONTEXT_CHARS
-
-    for chunk in retrieved_chunks:
-        text = chunk["text"].strip()
-        if len(text) > char_budget:
-            # Truncate at last sentence boundary within budget
-            truncated = text[:char_budget]
-            last_period = truncated.rfind(". ")
-            text = truncated[:last_period + 1] if last_period > 0 else truncated
-            included.append({**chunk, "text": text})
-            break
-        included.append(chunk)
-        char_budget -= len(text)
-
-    # Build context block
-    context_parts = []
-    for i, chunk in enumerate(included, start=1):
-        context_parts.append(
-            f"[{i}] {chunk['method']} ({chunk['year']}) — "
-            f"{chunk['file_name']}, page {chunk['page_number']}\n"
-            f"{chunk['text']}"
-        )
-
-    context = "\n\n---\n\n".join(context_parts)
-    prompt = (
-        f"Context from research papers:\n\n{context}\n\n"
-        f"---\n\nQuestion: {question}\n\n"
-        f"Answer (cite sources as [1], [2], etc.):"
-    )
-
-    return prompt, included
-
-
-# ---------------------------------------------------------------------------
-# Provider implementations
-# ---------------------------------------------------------------------------
-
-def _call_openai(prompt: str, model: str) -> tuple[str, dict]:
+def _call_openai(system: str, prompt: str, model: str) -> tuple[str, dict]:
     try:
         from openai import OpenAI
     except ImportError:
         raise ImportError("Run: pip install openai")
-
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system},
             {"role": "user",   "content": prompt},
         ],
         max_tokens=1024,
@@ -116,17 +52,13 @@ def _call_openai(prompt: str, model: str) -> tuple[str, dict]:
     return text, usage
 
 
-def _call_gemini(prompt: str, model: str) -> tuple[str, dict]:
+def _call_gemini(system: str, prompt: str, model: str) -> tuple[str, dict]:
     try:
         import google.generativeai as genai
     except ImportError:
         raise ImportError("Run: pip install google-generativeai")
-
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    llm = genai.GenerativeModel(
-        model_name=model,
-        system_instruction=SYSTEM_PROMPT,
-    )
+    llm = genai.GenerativeModel(model_name=model, system_instruction=system)
     response = llm.generate_content(prompt)
     text = response.text
     usage = {
@@ -137,16 +69,15 @@ def _call_gemini(prompt: str, model: str) -> tuple[str, dict]:
     return text, usage
 
 
-def _call_ollama(prompt: str, model: str) -> tuple[str, dict]:
+def _call_ollama(system: str, prompt: str, model: str) -> tuple[str, dict]:
     try:
         import requests
     except ImportError:
         raise ImportError("Run: pip install requests")
-
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system},
             {"role": "user",   "content": prompt},
         ],
         "stream": False,
@@ -163,11 +94,7 @@ def _call_ollama(prompt: str, model: str) -> tuple[str, dict]:
     return text, usage
 
 
-def _call_mock(prompt: str, model: str) -> tuple[str, dict]:
-    """
-    Returns a deterministic fake answer for development and testing.
-    No API key or network connection needed.
-    """
+def _call_mock(system: str, prompt: str, model: str) -> tuple[str, dict]:
     answer = (
         "Based on the provided context, the super-resolution methods use various "
         "loss functions and architectural components. [1] describes the use of "
@@ -179,10 +106,6 @@ def _call_mock(prompt: str, model: str) -> tuple[str, dict]:
     usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
     return answer, usage
 
-
-# ---------------------------------------------------------------------------
-# Main generate function
-# ---------------------------------------------------------------------------
 
 PROVIDERS = {
     "openai": _call_openai,
@@ -199,40 +122,48 @@ DEFAULT_MODELS = {
 }
 
 COST_PER_1K = {
-    "gpt-4o-mini":       {"prompt": 0.00015, "completion": 0.0006},
-    "gpt-4o":            {"prompt": 0.005,   "completion": 0.015},
-    "gemini-1.5-flash":  {"prompt": 0.00035, "completion": 0.00105},
-    "gemini-1.5-pro":    {"prompt": 0.0035,  "completion": 0.0105},
+    "gpt-4o-mini":      {"prompt": 0.00015, "completion": 0.0006},
+    "gpt-4o":           {"prompt": 0.005,   "completion": 0.015},
+    "gemini-1.5-flash": {"prompt": 0.00035, "completion": 0.00105},
+    "gemini-1.5-pro":   {"prompt": 0.0035,  "completion": 0.0105},
 }
 
+
+# ---------------------------------------------------------------------------
+# Main generate function
+# ---------------------------------------------------------------------------
 
 def generate_answer(
     question: str,
     retrieved_chunks: list[dict[str, Any]],
     provider: str | None = None,
     model: str | None = None,
+    prompt_template: str = "v2",
 ) -> dict[str, Any]:
     """
     Generate a grounded answer from retrieved chunks.
 
-    Returns a dict with:
-        answer       : str
-        sources      : list of included chunk dicts (with citation_index)
-        token_usage  : prompt/completion/total tokens + estimated cost
-        latency_ms   : end-to-end generation time
-        provider     : which LLM was used
-        model        : which model was used
+    Args:
+        question          : natural language question
+        retrieved_chunks  : list of chunk dicts from the retriever
+        provider          : 'openai' | 'gemini' | 'ollama' | 'mock'
+        model             : model name (None = read from .env)
+        prompt_template   : 'v1' | 'v2' | 'v3_concise' (see prompt_manager)
+
+    Returns a dict with answer, sources, token_usage, latency_ms, etc.
     """
-    # Resolve provider
     provider = provider or os.getenv("LLM_PROVIDER", "mock")
     if provider not in PROVIDERS:
         logger.warning("Unknown provider '%s', falling back to mock", provider)
         provider = "mock"
-
     model = model or os.getenv("LLM_MODEL", DEFAULT_MODELS[provider])
 
-    # Build prompt
-    prompt, included_chunks = build_prompt(question, retrieved_chunks)
+    # Build prompt (handles refusal + context limiting internally)
+    system, user_prompt, included_chunks, refused = build_prompt(
+        question=question,
+        chunks=retrieved_chunks,
+        template=prompt_template,
+    )
 
     # Add citation index to sources
     sources = [
@@ -240,11 +171,26 @@ def generate_answer(
         for i, chunk in enumerate(included_chunks)
     ]
 
+    # Short-circuit if refused
+    if refused:
+        result = {
+            "answer":      REFUSAL_MESSAGE,
+            "sources":     [],
+            "token_usage": {"prompt_tokens": 0, "completion_tokens": 0,
+                            "total_tokens": 0, "estimated_cost_usd": 0.0},
+            "latency_ms":  0.0,
+            "provider":    provider,
+            "model":       model,
+            "refused":     True,
+        }
+        _log_query(question, REFUSAL_MESSAGE, result["token_usage"], 0.0, provider, model)
+        return result
+
     # Call LLM
-    logger.info("Generating answer with %s / %s (%d chunks in context)",
-                provider, model, len(included_chunks))
+    logger.info("Generating with %s/%s (%d chunks, template=%s)",
+                provider, model, len(included_chunks), prompt_template)
     t0 = time.time()
-    answer, raw_usage = PROVIDERS[provider](prompt, model)
+    answer, raw_usage = PROVIDERS[provider](system, user_prompt, model)
     latency_ms = (time.time() - t0) * 1000
 
     # Estimate cost
@@ -253,10 +199,8 @@ def generate_answer(
         raw_usage["prompt_tokens"]     / 1000 * rates["prompt"] +
         raw_usage["completion_tokens"] / 1000 * rates["completion"]
     )
-
     token_usage = {**raw_usage, "estimated_cost_usd": round(cost, 8)}
 
-    # Log to JSONL
     _log_query(question, answer, token_usage, latency_ms, provider, model)
 
     return {
@@ -266,6 +210,7 @@ def generate_answer(
         "latency_ms":  round(latency_ms, 1),
         "provider":    provider,
         "model":       model,
+        "refused":     False,
     }
 
 
@@ -276,14 +221,7 @@ def generate_answer(
 LOG_PATH = Path("logs/query_log.jsonl")
 
 
-def _log_query(
-    question: str,
-    answer: str,
-    token_usage: dict,
-    latency_ms: float,
-    provider: str,
-    model: str,
-) -> None:
+def _log_query(question, answer, token_usage, latency_ms, provider, model):
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "timestamp":   time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -299,7 +237,6 @@ def _log_query(
 
 
 def log_feedback(question: str, answer: str, helpful: bool) -> None:
-    """Log thumbs up/down feedback from the Streamlit UI."""
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
