@@ -1,14 +1,13 @@
 """
-src/pipeline.py
-----------------
-End-to-end RAG pipeline: question -> retrieve -> generate -> cited answer.
+src/pipeline.py  (Day 13 update)
+----------------------------------
+Added optional reranking step between retrieval and generation.
 
-This is the single entry point for the Streamlit app and FastAPI.
-Neither should import from src.retrieval or src.generation directly.
-
-Usage:
-    pipeline = SRRagPipeline()
-    result = pipeline.query("What loss does SRGAN use?")
+Changes from Day 8:
+  - Accepts use_reranker=True in query()
+  - When enabled, fetches top_k * 3 candidates, reranks, returns top_k
+  - Reranker latency tracked separately in result dict
+  - Reranker instance lazy-loaded on first use
 """
 
 from __future__ import annotations
@@ -26,10 +25,8 @@ logger = logging.getLogger(__name__)
 
 class SRRagPipeline:
     """
-    Orchestrates retrieval and generation into a single query() call.
-
-    Instantiate once and reuse — the retriever holds the ChromaDB
-    connection and the embedding model in memory.
+    End-to-end RAG pipeline: retrieve → (rerank) → generate → cite.
+    Instantiate once and reuse.
     """
 
     def __init__(
@@ -45,13 +42,26 @@ class SRRagPipeline:
             collection_name=collection_name,
             embedding_model=embedding_model,
         )
-        self.llm_provider = llm_provider   # None -> reads from .env
-        self.llm_model    = llm_model      # None -> reads from .env
+        self.llm_provider = llm_provider
+        self.llm_model    = llm_model
+        self._reranker    = None   # lazy-loaded on first use
 
         logger.info(
             "SRRagPipeline ready (collection=%s, provider=%s)",
             collection_name, llm_provider or "from .env",
         )
+
+    # ------------------------------------------------------------------
+    # Reranker (lazy-loaded)
+    # ------------------------------------------------------------------
+
+    @property
+    def reranker(self):
+        if self._reranker is None:
+            from src.retrieval.reranker import Reranker
+            self._reranker = Reranker()
+            logger.info("Reranker loaded.")
+        return self._reranker
 
     # ------------------------------------------------------------------
     # Main query method
@@ -61,40 +71,31 @@ class SRRagPipeline:
         self,
         question: str,
         top_k: int = 5,
+        use_reranker: bool = False,
         where: dict | None = None,
         include_raw_chunks: bool = False,
+        prompt_template: str = "v2",
     ) -> dict[str, Any]:
         """
-        Run the full RAG pipeline for a question.
+        Run the full RAG pipeline.
 
         Args:
             question          : natural language question
-            top_k             : chunks to retrieve
+            top_k             : final number of chunks to pass to LLM
+            use_reranker      : if True, fetch top_k*3 candidates and rerank
             where             : optional ChromaDB metadata filter
-            include_raw_chunks: include raw retrieved chunks in output
+            include_raw_chunks: include raw retrieved chunks in result
+            prompt_template   : 'v1' | 'v2' | 'v3_concise'
 
-        Returns:
-            {
-                "question":     original question,
-                "answer":       LLM-generated answer with [N] citations,
-                "answer_full":  answer + formatted references block,
-                "sources":      list of source chunk dicts,
-                "citations_valid": bool,
-                "token_usage":  dict with tokens + cost,
-                "retrieval_ms": retrieval latency,
-                "generation_ms": generation latency,
-                "total_ms":     end-to-end latency,
-                "provider":     which LLM was used,
-                "model":        which model was used,
-                "raw_chunks":   (optional) raw retrieval results,
-            }
+        Returns dict with answer, sources, latencies, token_usage, etc.
         """
         t_start = time.time()
 
         # Step 1 — Retrieve
-        retrieval = self.retriever.retrieve(
-            question, top_k=top_k, where=where
-        )
+        # Fetch more candidates when reranking so the reranker has
+        # enough material to work with
+        fetch_k = top_k * 3 if use_reranker else top_k
+        retrieval = self.retriever.retrieve(question, top_k=fetch_k, where=where)
         retrieval_ms = retrieval["latency_ms"]
         chunks = retrieval["results"]
 
@@ -102,21 +103,28 @@ class SRRagPipeline:
             logger.warning("No chunks retrieved for: %s", question)
             return self._empty_result(question)
 
-        # Step 2 — Generate
+        # Step 2 — Rerank (optional)
+        rerank_ms = 0.0
+        if use_reranker:
+            t_rerank = time.time()
+            chunks = self.reranker.rerank(question, chunks, top_k=top_k)
+            rerank_ms = (time.time() - t_rerank) * 1000
+            logger.info("Reranking complete in %.0f ms", rerank_ms)
+
+        # Step 3 — Generate
         t_gen = time.time()
         gen = generate_answer(
             question=question,
             retrieved_chunks=chunks,
             provider=self.llm_provider,
             model=self.llm_model,
+            prompt_template=prompt_template,
         )
         generation_ms = (time.time() - t_gen) * 1000
         total_ms = (time.time() - t_start) * 1000
 
-        # Step 3 — Validate citations
+        # Step 4 — Validate + format
         citation_report = validate_citations(gen["answer"], gen["sources"])
-
-        # Step 4 — Format full answer with references
         answer_full = format_answer_with_citations(gen["answer"], gen["sources"])
 
         result = {
@@ -127,18 +135,21 @@ class SRRagPipeline:
             "citations_valid": citation_report["valid"],
             "token_usage":     gen["token_usage"],
             "retrieval_ms":    round(retrieval_ms, 1),
+            "rerank_ms":       round(rerank_ms, 1),
             "generation_ms":   round(generation_ms, 1),
             "total_ms":        round(total_ms, 1),
             "provider":        gen["provider"],
             "model":           gen["model"],
+            "refused":         gen.get("refused", False),
+            "use_reranker":    use_reranker,
         }
 
         if include_raw_chunks:
             result["raw_chunks"] = chunks
 
         logger.info(
-            "Query complete in %.0f ms (ret=%.0f, gen=%.0f) | citations_valid=%s",
-            total_ms, retrieval_ms, generation_ms, citation_report["valid"],
+            "Query done in %.0f ms (ret=%.0f, rerank=%.0f, gen=%.0f) | reranker=%s",
+            total_ms, retrieval_ms, rerank_ms, generation_ms, use_reranker,
         )
         return result
 
@@ -153,16 +164,9 @@ class SRRagPipeline:
         year_from: int | None = None,
         year_to: int | None = None,
         top_k: int = 5,
+        use_reranker: bool = False,
     ) -> dict[str, Any]:
-        """
-        Query with optional method and/or year filters.
-
-        Examples:
-            pipeline.query_with_filter("loss function", method="SRGAN")
-            pipeline.query_with_filter("attention", year_from=2021)
-        """
         where: dict | None = None
-
         if method and year_from:
             where = {"$and": [{"method": method}, {"year": {"$gte": year_from}}]}
         elif method:
@@ -171,16 +175,13 @@ class SRRagPipeline:
             where = {"year": {"$gte": year_from, "$lte": year_to}}
         elif year_from:
             where = {"year": {"$gte": year_from}}
-
-        return self.query(question, top_k=top_k, where=where)
+        return self.query(question, top_k=top_k, where=where, use_reranker=use_reranker)
 
     def log_feedback(self, question: str, answer: str, helpful: bool) -> None:
-        """Proxy to answer_generator's feedback logger."""
         from src.generation.answer_generator import log_feedback
         log_feedback(question=question, answer=answer, helpful=helpful)
 
     def info(self) -> dict[str, Any]:
-        """Return pipeline configuration and collection stats."""
         col_info = self.retriever.collection_info()
         return {
             "collection_name":  col_info["collection_name"],
@@ -189,6 +190,7 @@ class SRRagPipeline:
             "persist_dir":      col_info["persist_dir"],
             "llm_provider":     self.llm_provider or "from .env",
             "llm_model":        self.llm_model or "from .env",
+            "reranker_loaded":  self._reranker is not None,
         }
 
     # ------------------------------------------------------------------
@@ -205,8 +207,11 @@ class SRRagPipeline:
             "token_usage":     {"prompt_tokens": 0, "completion_tokens": 0,
                                 "total_tokens": 0, "estimated_cost_usd": 0.0},
             "retrieval_ms":    0.0,
+            "rerank_ms":       0.0,
             "generation_ms":   0.0,
             "total_ms":        0.0,
             "provider":        "none",
             "model":           "none",
+            "refused":         False,
+            "use_reranker":    False,
         }
