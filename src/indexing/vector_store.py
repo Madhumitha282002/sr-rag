@@ -3,15 +3,11 @@ src/indexing/vector_store.py
 -----------------------------
 Wraps ChromaDB for storing and querying chunk embeddings.
 
-Collection schema per chunk:
-  - id        : chunk_id (e.g. "srgan_2016_p03_c01")
-  - embedding : float vector from sentence-transformer
-  - document  : chunk text (Chroma's 'documents' field)
-  - metadata  : file_name, title, method, year, page_number, etc.
-
-IMPORTANT: if you change chunk_size or the embedding model,
-delete vector_store/ and re-index from scratch. Mixed collections
-silently return wrong results.
+FIX: ChromaDB's PersistentClient must be kept alive at the module
+level. If the client is local to load_vector_store() and goes out
+of scope, Python's GC collects it, which silently breaks query()
+(count() still works because it hits SQLite, but query() needs
+the HNSW index which lives in the client).
 """
 
 from __future__ import annotations
@@ -28,6 +24,22 @@ logger = logging.getLogger(__name__)
 DEFAULT_COLLECTION   = "sr_papers"
 DEFAULT_VECTOR_STORE = "vector_store"
 
+# ---------------------------------------------------------------------------
+# Module-level client cache — prevents garbage collection
+# ---------------------------------------------------------------------------
+_clients: dict[str, chromadb.PersistentClient] = {}
+
+
+def _get_client(persist_dir: str) -> chromadb.PersistentClient:
+    """Return a cached PersistentClient for the given path."""
+    if persist_dir not in _clients:
+        logger.info("Creating ChromaDB client at: %s", persist_dir)
+        _clients[persist_dir] = chromadb.PersistentClient(
+            path=persist_dir,
+            settings=ChromaSettings(anonymized_telemetry=False),
+        )
+    return _clients[persist_dir]
+
 
 # ---------------------------------------------------------------------------
 # Client + collection loader
@@ -39,16 +51,15 @@ def load_vector_store(
 ) -> chromadb.Collection:
     """
     Open (or create) a persistent ChromaDB collection.
-    Safe to call multiple times — returns existing collection if present.
+    The underlying client is kept alive in a module-level cache
+    to prevent garbage collection from breaking HNSW queries.
     """
     persist_dir = str(Path(persist_dir).resolve())
-    client = chromadb.PersistentClient(
-        path=persist_dir,
-        settings=ChromaSettings(anonymized_telemetry=False),
-    )
+    client = _get_client(persist_dir)
+
     collection = client.get_or_create_collection(
         name=collection_name,
-        metadata={"hnsw:space": "cosine"},   # cosine similarity for sentence-transformers
+        metadata={"hnsw:space": "cosine"},
     )
     count = collection.count()
     logger.info(
@@ -62,20 +73,24 @@ def reset_vector_store(
     persist_dir: str | Path = DEFAULT_VECTOR_STORE,
     collection_name: str = DEFAULT_COLLECTION,
 ) -> chromadb.Collection:
-    """
-    Delete and recreate the collection from scratch.
-    Call this whenever chunk_size or embedding model changes.
-    """
+    """Delete and recreate the collection from scratch."""
     persist_dir = str(Path(persist_dir).resolve())
+
+    # Remove cached client so we get a fresh one after reset
+    _clients.pop(persist_dir, None)
+
     client = chromadb.PersistentClient(
         path=persist_dir,
         settings=ChromaSettings(anonymized_telemetry=False),
     )
+    # Store fresh client in cache
+    _clients[persist_dir] = client
+
     try:
         client.delete_collection(collection_name)
         logger.info("Deleted existing collection '%s'", collection_name)
     except Exception:
-        pass   # collection didn't exist — fine
+        pass
 
     collection = client.create_collection(
         name=collection_name,
@@ -94,11 +109,7 @@ def index_chunks(
     chunks: list[dict[str, Any]],
     batch_size: int = 100,
 ) -> None:
-    """
-    Upsert all chunks (with pre-computed embeddings) into ChromaDB.
-    Chunks must already have an 'embedding' key — run embed_chunks() first.
-    Uses batching to stay within ChromaDB's memory limits.
-    """
+    """Upsert all chunks into ChromaDB in batches."""
     if not chunks:
         logger.warning("index_chunks called with empty list — nothing to do")
         return
@@ -114,17 +125,11 @@ def index_chunks(
 
     for i in range(0, total, batch_size):
         batch = chunks[i : i + batch_size]
-
-        ids        = [c["chunk_id"] for c in batch]
-        embeddings = [c["embedding"] for c in batch]
-        documents  = [c["text"] for c in batch]
-        metadatas  = [_build_metadata(c) for c in batch]
-
         collection.upsert(
-            ids=ids,
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas,
+            ids=[c["chunk_id"] for c in batch],
+            embeddings=[c["embedding"] for c in batch],
+            documents=[c["text"] for c in batch],
+            metadatas=[_build_metadata(c) for c in batch],
         )
         indexed += len(batch)
         logger.info("Indexed %d / %d chunks", indexed, total)
@@ -133,10 +138,6 @@ def index_chunks(
 
 
 def _build_metadata(chunk: dict[str, Any]) -> dict:
-    """
-    Extract only ChromaDB-safe metadata fields (str, int, float, bool).
-    Lists and nested dicts are not supported by Chroma.
-    """
     return {
         "file_name":   str(chunk.get("file_name", "")),
         "title":       str(chunk.get("title", "")),
@@ -162,14 +163,7 @@ def query_collection(
     top_k: int = 5,
     where: dict | None = None,
 ) -> list[dict[str, Any]]:
-    """
-    Retrieve the top_k most similar chunks for a query embedding.
-    Returns a list of result dicts with text, metadata, and score.
-
-    Optional 'where' filter follows ChromaDB syntax, e.g.:
-        where={"method": "SRGAN"}
-        where={"year": {"$gte": 2020}}
-    """
+    """Retrieve the top_k most similar chunks for a query embedding."""
     kwargs: dict[str, Any] = {
         "query_embeddings": [query_embedding],
         "n_results": min(top_k, collection.count()),
@@ -187,14 +181,14 @@ def query_collection(
         raw["distances"][0],
     ):
         results.append({
-            "text":         doc,
-            "score":        round(1 - dist, 4),   # cosine distance -> similarity
-            "chunk_id":     meta.get("chunk_id", ""),
-            "file_name":    meta.get("file_name", ""),
-            "title":        meta.get("title", ""),
-            "method":       meta.get("method", ""),
-            "year":         meta.get("year", 0),
-            "page_number":  meta.get("page_number", 0),
+            "text":           doc,
+            "score":          round(1 - dist, 4),
+            "chunk_id":       meta.get("chunk_id", ""),
+            "file_name":      meta.get("file_name", ""),
+            "title":          meta.get("title", ""),
+            "method":         meta.get("method", ""),
+            "year":           meta.get("year", 0),
+            "page_number":    meta.get("page_number", 0),
             "citation_index": len(results) + 1,
         })
 
