@@ -1,0 +1,71 @@
+# docker-compose.yml
+# ---------------------------------------------------------------------------
+# Runs the SR-RAG API and Streamlit UI as separate services.
+# Both share the same vector_store and data volumes so the
+# pre-indexed ChromaDB collection is available to both.
+#
+# Usage:
+#   docker compose up --build          # build and start both services
+#   docker compose up api              # API only
+#   docker compose up ui               # UI only
+#   docker compose down                # stop everything
+#   docker compose logs -f api         # follow API logs
+# ---------------------------------------------------------------------------
+
+services:
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: sr-rag:latest
+    command: ["api"]
+    container_name: sr-rag-api
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - LLM_MODEL=${LLM_MODEL:-mock-model}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      # Mount pre-indexed vector store (read-only for API)
+      - ./vector_store:/app/vector_store
+      # Mount processed data (metadata CSV)
+      - ./data/processed:/app/data/processed:ro
+      # Writable log directory
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s    # pipeline takes ~30s to load on first start
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: sr-rag:latest
+    command: ["ui"]
+    container_name: sr-rag-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - LLM_MODEL=${LLM_MODEL:-mock-model}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./vector_store:/app/vector_store
+      - ./data/processed:/app/data/processed:ro
+      - ./logs:/app/logs
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes: {}

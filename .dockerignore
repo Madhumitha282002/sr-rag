@@ -1,0 +1,50 @@
+# .dockerignore
+# Excludes files that shouldn't be in the Docker image.
+
+# Virtual environment (rebuilt inside container)
+.venv/
+venv/
+
+# Raw PDFs (large, not needed in container — vector_store is mounted)
+data/raw_papers/
+
+# Git
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+notebooks/
+
+# Secrets — never bake into image
+.env
+
+# Test files
+tests/
+
+# Docs and figures
+docs/
+
+# Local vector store (mounted as volume at runtime)
+vector_store/
+
+# Logs (mounted as volume at runtime)
+logs/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Pre-commit
+.pre-commit-config.yaml
