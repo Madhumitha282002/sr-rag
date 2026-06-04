@@ -1,0 +1,1236 @@
+{
+  "timestamp": "2026-06-04T20:51:54Z",
+  "retrieval_dense": {
+    "overall": {
+      "recall@1": 0.332,
+      "recall@3": 0.468,
+      "recall@5": 0.524,
+      "precision@1": 0.56,
+      "precision@3": 0.52,
+      "precision@5": 0.464,
+      "hit@1": 0.56,
+      "hit@3": 0.72,
+      "hit@5": 0.76,
+      "mrr": 0.643,
+      "refusal_rate": 0.0,
+      "n": 25
+    },
+    "by_difficulty": {
+      "easy": {
+        "recall@1": 0.5,
+        "recall@3": 0.7,
+        "recall@5": 0.7,
+        "precision@1": 0.5,
+        "precision@3": 0.567,
+        "precision@5": 0.48,
+        "hit@1": 0.5,
+        "hit@3": 0.7,
+        "hit@5": 0.7,
+        "mrr": 0.6,
+        "refusal_rate": 0.0,
+        "n": 10
+      },
+      "medium": {
+        "recall@1": 0.27,
+        "recall@3": 0.37,
+        "recall@5": 0.44,
+        "precision@1": 0.6,
+        "precision@3": 0.567,
+        "precision@5": 0.48,
+        "hit@1": 0.6,
+        "hit@3": 0.8,
+        "hit@5": 0.8,
+        "mrr": 0.683,
+        "refusal_rate": 0.0,
+        "n": 10
+      },
+      "hard": {
+        "recall@1": 0.12,
+        "recall@3": 0.2,
+        "recall@5": 0.34,
+        "precision@1": 0.6,
+        "precision@3": 0.333,
+        "precision@5": 0.4,
+        "hit@1": 0.6,
+        "hit@3": 0.6,
+        "hit@5": 0.8,
+        "mrr": 0.65,
+        "refusal_rate": 0.0,
+        "n": 5
+      },
+      "unanswerable": {
+        "n": 5,
+        "correct_refusals": 0,
+        "refusal_rate": 0.0
+      }
+    },
+    "avg_latency_ms": 147.7,
+    "p95_latency_ms": 63.3
+  },
+  "answer_quality": {
+    "overall": {
+      "n": 25,
+      "composite_score": 0.435,
+      "keyword_coverage": 0.19,
+      "citation_coverage": 0.412,
+      "source_grounding": 0.5,
+      "length_ok_rate": 1.0,
+      "refusal_accuracy": 0.0,
+      "avg_latency_ms": 15.0,
+      "p95_latency_ms": 17.3,
+      "total_cost_usd": 0.0,
+      "mean_cost_per_query": 0.0
+    },
+    "by_difficulty": {
+      "easy": {
+        "n": 10,
+        "composite_score": 0.44
+      },
+      "medium": {
+        "n": 10,
+        "composite_score": 0.428
+      },
+      "hard": {
+        "n": 5,
+        "composite_score": 0.44
+      }
+    },
+    "records": [
+      {
+        "question": "What loss function does SRGAN use?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.675,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "perceptual loss"
+          ],
+          "missing": [
+            "adversarial loss",
+            "content loss"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.5,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 1.0,
+          "grounded_claims": 2,
+          "total_claims": 2,
+          "ungrounded": []
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What does EDSR remove from the ResNet architecture?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.55,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "batch normalization",
+            "batch norm"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 1.0,
+          "grounded_claims": 2,
+          "total_claims": 2,
+          "ungrounded": []
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What upscaling factor does SRCNN target?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.2,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "bicubic",
+            "upscaling",
+            "scale factor"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.0,
+          "grounded_claims": 0,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training.",
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What dataset did EDSR win on at NTIRE 2017?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.375,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "DIV2K",
+            "NTIRE"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What does RCAN stand for?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.375,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "residual channel attention network"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "How many residual blocks does VDSR use?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.475,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "residual"
+          ],
+          "missing": [
+            "depth",
+            "layers"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What is the output of the discriminator in SRGAN?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.3,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "real"
+          ],
+          "missing": [
+            "fake",
+            "probability"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.0,
+          "grounded_claims": 0,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training.",
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What kind of attention does RCAN use?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.7,
+        "keyword_coverage": {
+          "score": 0.5,
+          "found": [
+            "channel attention"
+          ],
+          "missing": [
+            "squeeze excitation"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 1.0,
+          "grounded_claims": 2,
+          "total_claims": 2,
+          "ungrounded": []
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What does RDN stand for?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.375,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "residual dense network"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "What image quality metrics does SwinIR report?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.375,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "PSNR",
+            "SSIM"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "easy"
+      },
+      {
+        "question": "How does ESRGAN improve upon SRGAN?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.475,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "perceptual loss"
+          ],
+          "missing": [
+            "RRDB",
+            "relativistic discriminator"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "What datasets do both EDSR and RCAN evaluate on?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.55,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "Set5",
+            "Set14",
+            "BSD100",
+            "Urban100"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 1.0,
+          "grounded_claims": 2,
+          "total_claims": 2,
+          "ungrounded": []
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "How do SRGAN and ESRGAN differ in their discriminator design?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.2,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "relativistic",
+            "standard",
+            "discriminator"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.0,
+          "grounded_claims": 0,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training.",
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "What is the difference between SwinIR and previous CNN-based SR methods?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.2,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "transformer",
+            "self-attention",
+            "local window"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.0,
+          "grounded_claims": 0,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training.",
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "Which papers use DIV2K as a training dataset?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.525,
+        "keyword_coverage": {
+          "score": 0.5,
+          "found": [
+            "training"
+          ],
+          "missing": [
+            "DIV2K"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "How does RDN use dense connections differently from EDSR?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.675,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "residual"
+          ],
+          "missing": [
+            "dense connections",
+            "feature reuse"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.5,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 1.0,
+          "grounded_claims": 2,
+          "total_claims": 2,
+          "ungrounded": []
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "What problem does RealESRGAN solve that ESRGAN does not?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.2,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "blind",
+            "real-world",
+            "degradation"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.0,
+          "grounded_claims": 0,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training.",
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "Compare the training loss used in SRCNN versus SRGAN.",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.675,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "perceptual"
+          ],
+          "missing": [
+            "MSE",
+            "pixel loss"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.5,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 1.0,
+          "grounded_claims": 2,
+          "total_claims": 2,
+          "ungrounded": []
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "How do RCAN and SwinIR both address long-range dependencies?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.575,
+        "keyword_coverage": {
+          "score": 0.667,
+          "found": [
+            "attention",
+            "channel"
+          ],
+          "missing": [
+            "transformer"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "Which early SR methods use only pixel-wise loss?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.2,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "MSE",
+            "L1",
+            "pixel loss"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.0,
+          "grounded_claims": 0,
+          "total_claims": 2,
+          "ungrounded": [
+            "[1] describes the use of perceptual loss combined with adversarial training.",
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "medium"
+      },
+      {
+        "question": "Trace the evolution of loss functions across SRCNN to HAT.",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.525,
+        "keyword_coverage": {
+          "score": 0.5,
+          "found": [
+            "perceptual",
+            "adversarial"
+          ],
+          "missing": [
+            "MSE",
+            "pixel"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "hard"
+      },
+      {
+        "question": "How have SR architectures evolved from CNNs to transformers and what are the tradeoffs?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.45,
+        "keyword_coverage": {
+          "score": 0.25,
+          "found": [
+            "attention"
+          ],
+          "missing": [
+            "CNN",
+            "transformer",
+            "complexity"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "hard"
+      },
+      {
+        "question": "Which papers report the highest PSNR on the Set5 benchmark and what architectural choices contributed?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.375,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "PSNR",
+            "Set5",
+            "benchmark",
+            "state of the art"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "hard"
+      },
+      {
+        "question": "How do the different approaches to handling real-world degradation compare across the corpus?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.375,
+        "keyword_coverage": {
+          "score": 0.0,
+          "found": [],
+          "missing": [
+            "degradation",
+            "blind",
+            "real-world",
+            "noise"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "hard"
+      },
+      {
+        "question": "What role does residual learning play across the super-resolution methods in this corpus?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.475,
+        "keyword_coverage": {
+          "score": 0.333,
+          "found": [
+            "residual"
+          ],
+          "missing": [
+            "skip connection",
+            "learning"
+          ]
+        },
+        "citation_coverage": {
+          "score": 0.4,
+          "cited": [
+            1,
+            2
+          ],
+          "uncited": [
+            3,
+            4,
+            5
+          ],
+          "hallucinated": []
+        },
+        "source_grounding": {
+          "score": 0.5,
+          "grounded_claims": 1,
+          "total_claims": 2,
+          "ungrounded": [
+            "[2] introduces residual channel attention to focus on informative features."
+          ]
+        },
+        "length_ok": {
+          "ok": true,
+          "words": 50,
+          "verdict": "ok"
+        },
+        "notes": "",
+        "difficulty": "hard"
+      },
+      {
+        "question": "What SR method does Anthropic use in its products?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.0,
+        "keyword_coverage": null,
+        "citation_coverage": null,
+        "source_grounding": null,
+        "length_ok": null,
+        "notes": "unanswerable question \u2014 evaluated on refusal only",
+        "difficulty": "unanswerable"
+      },
+      {
+        "question": "What is the inference speed of HAT on an RTX 4090?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.0,
+        "keyword_coverage": null,
+        "citation_coverage": null,
+        "source_grounding": null,
+        "length_ok": null,
+        "notes": "unanswerable question \u2014 evaluated on refusal only",
+        "difficulty": "unanswerable"
+      },
+      {
+        "question": "Which SR paper has the most GitHub stars?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.0,
+        "keyword_coverage": null,
+        "citation_coverage": null,
+        "source_grounding": null,
+        "length_ok": null,
+        "notes": "unanswerable question \u2014 evaluated on refusal only",
+        "difficulty": "unanswerable"
+      },
+      {
+        "question": "What did the authors of SRGAN have for breakfast on submission day?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.0,
+        "keyword_coverage": null,
+        "citation_coverage": null,
+        "source_grounding": null,
+        "length_ok": null,
+        "notes": "unanswerable question \u2014 evaluated on refusal only",
+        "difficulty": "unanswerable"
+      },
+      {
+        "question": "Is SwinIR faster than HAT on mobile devices?",
+        "refused": false,
+        "correct_refusal": false,
+        "composite_score": 0.0,
+        "keyword_coverage": null,
+        "citation_coverage": null,
+        "source_grounding": null,
+        "length_ok": null,
+        "notes": "unanswerable question \u2014 evaluated on refusal only",
+        "difficulty": "unanswerable"
+      }
+    ]
+  },
+  "output_path": "data/processed/eval_report.json"
+}
