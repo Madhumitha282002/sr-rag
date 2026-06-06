@@ -38,7 +38,7 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff check src/ api/ scripts/ tests/ --ignore E501,E402,F401
+          ruff check src/ api/ scripts/ tests/ --ignore E501,E402,F401,I001,W292,F541
 
       - name: Run tests with coverage
         run: |

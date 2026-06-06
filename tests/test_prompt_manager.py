@@ -5,21 +5,22 @@ Run from project root: pytest tests/test_prompt_manager.py -v
 """
 
 import pytest
+
 from src.generation.prompt_manager import (
-    build_context,
-    build_prompt,
-    should_refuse,
-    prompt_stats,
-    REFUSAL_MESSAGE,
     MAX_CONTEXT_CHARS,
     MIN_ANSWER_SCORE,
+    REFUSAL_MESSAGE,
     SYSTEM_PROMPTS,
+    build_context,
+    build_prompt,
+    prompt_stats,
+    should_refuse,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def good_chunks():
@@ -59,7 +60,7 @@ def weak_chunks():
             "title": "SRGAN",
             "authors": "Ledig et al.",
             "venue": "CVPR",
-            "score": 0.15,   # below MIN_ANSWER_SCORE
+            "score": 0.15,  # below MIN_ANSWER_SCORE
             "citation_index": 1,
             "text": "Some loosely related text.",
             "char_count": 30,
@@ -84,11 +85,11 @@ def large_chunks():
             "venue": "B",
             "score": 0.9 - i * 0.01,
             "citation_index": i + 1,
-            "text": "word " * 800,    # ~4000 chars each
+            "text": "word " * 800,  # ~4000 chars each
             "char_count": 4000,
             "word_count": 800,
         }
-        for i in range(5)   # 5 * 4000 = 20000 chars > MAX_CONTEXT_CHARS
+        for i in range(5)  # 5 * 4000 = 20000 chars > MAX_CONTEXT_CHARS
     ]
 
 
@@ -96,8 +97,8 @@ def large_chunks():
 # should_refuse
 # ---------------------------------------------------------------------------
 
-class TestShouldRefuse:
 
+class TestShouldRefuse:
     def test_refuses_empty_chunks(self):
         refuse, reason = should_refuse([])
         assert refuse is True
@@ -123,15 +124,15 @@ class TestShouldRefuse:
 # build_context
 # ---------------------------------------------------------------------------
 
-class TestBuildContext:
 
+class TestBuildContext:
     def test_includes_all_small_chunks(self, good_chunks):
         _, included = build_context(good_chunks, max_chars=MAX_CONTEXT_CHARS)
         assert len(included) == len(good_chunks)
 
     def test_respects_char_budget(self, large_chunks):
         context, included = build_context(large_chunks, max_chars=MAX_CONTEXT_CHARS)
-        assert len(context) <= MAX_CONTEXT_CHARS + 500   # small buffer for headers
+        assert len(context) <= MAX_CONTEXT_CHARS + 500  # small buffer for headers
 
     def test_truncates_when_budget_exceeded(self, large_chunks):
         _, included = build_context(large_chunks, max_chars=MAX_CONTEXT_CHARS)
@@ -155,8 +156,8 @@ class TestBuildContext:
 # build_prompt
 # ---------------------------------------------------------------------------
 
-class TestBuildPrompt:
 
+class TestBuildPrompt:
     def test_returns_four_values(self, good_chunks):
         result = build_prompt("What is SRGAN?", good_chunks)
         assert len(result) == 4
@@ -200,12 +201,20 @@ class TestBuildPrompt:
 # prompt_stats
 # ---------------------------------------------------------------------------
 
-class TestPromptStats:
 
+class TestPromptStats:
     def test_returns_required_keys(self, good_chunks):
         stats = prompt_stats("test", good_chunks)
-        for key in ["template", "refused", "chunks_in", "chunks_used",
-                    "system_chars", "user_chars", "total_chars", "top_score"]:
+        for key in [
+            "template",
+            "refused",
+            "chunks_in",
+            "chunks_used",
+            "system_chars",
+            "user_chars",
+            "total_chars",
+            "top_score",
+        ]:
             assert key in stats
 
     def test_refused_true_for_empty(self):

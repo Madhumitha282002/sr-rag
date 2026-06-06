@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 # Context limiter config
 # ---------------------------------------------------------------------------
 
-MAX_CONTEXT_CHARS = 6000    # ~1500 tokens — safe for gpt-4o-mini
-MIN_ANSWER_SCORE  = 0.30    # refuse if best chunk score is below this
+MAX_CONTEXT_CHARS = 6000  # ~1500 tokens — safe for gpt-4o-mini
+MIN_ANSWER_SCORE = 0.30  # refuse if best chunk score is below this
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +35,6 @@ MIN_ANSWER_SCORE  = 0.30    # refuse if best chunk score is below this
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPTS = {
-
     "v1": """You are an expert assistant on image super-resolution (SR) research.
 You answer questions strictly based on the provided paper excerpts.
 
@@ -45,7 +44,6 @@ Rules:
 - Do not hallucinate methods, numbers, or paper names not present in the context.
 - Be concise and precise. Use technical language appropriate for ML researchers.
 - When comparing methods, structure your answer clearly.""",
-
     "v2": """You are a knowledgeable research assistant specialising in image super-resolution.
 Your answers are grounded exclusively in the paper excerpts provided below.
 
@@ -57,7 +55,6 @@ Guidelines:
 - Never invent or infer details not explicitly stated in the excerpts.
 - Structure comparative answers as clear bullet points or a short table.
 - Keep answers under 300 words unless the question explicitly asks for detail.""",
-
     "v3_concise": """You are a precise SR research assistant. Answer only from the provided excerpts.
 Cite every claim as [N]. If the answer is not in the context, say so. Be brief.""",
 }
@@ -68,6 +65,7 @@ DEFAULT_TEMPLATE = "v2"
 # ---------------------------------------------------------------------------
 # Context builder with length limiter
 # ---------------------------------------------------------------------------
+
 
 def build_context(
     chunks: list[dict[str, Any]],
@@ -98,7 +96,7 @@ def build_context(
             fragment = text[:char_budget]
             last_period = fragment.rfind(". ")
             if last_period > char_budget // 2:
-                fragment = fragment[:last_period + 1]
+                fragment = fragment[: last_period + 1]
             else:
                 fragment = fragment  # no good sentence boundary — keep raw
 
@@ -107,14 +105,18 @@ def build_context(
                 truncated = True
                 logger.info(
                     "Context truncated at chunk %s (%d -> %d chars)",
-                    chunk.get("chunk_id", "?"), len(text), len(fragment),
+                    chunk.get("chunk_id", "?"),
+                    len(text),
+                    len(fragment),
                 )
-            break   # budget exhausted
+            break  # budget exhausted
 
     if truncated:
         logger.warning(
             "Context budget hit (%d chars). Included %d / %d chunks.",
-            max_chars, len(included), len(chunks),
+            max_chars,
+            len(included),
+            len(chunks),
         )
 
     return _format_context(included), included
@@ -134,6 +136,7 @@ def _format_context(chunks: list[dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 # Refusal check
 # ---------------------------------------------------------------------------
+
 
 def should_refuse(
     chunks: list[dict[str, Any]],
@@ -167,6 +170,7 @@ REFUSAL_MESSAGE = (
 # ---------------------------------------------------------------------------
 # Full prompt builder
 # ---------------------------------------------------------------------------
+
 
 def build_prompt(
     question: str,
@@ -207,6 +211,7 @@ def build_prompt(
 # Prompt stats helper (useful for notebook analysis)
 # ---------------------------------------------------------------------------
 
+
 def prompt_stats(
     question: str,
     chunks: list[dict[str, Any]],
@@ -215,13 +220,13 @@ def prompt_stats(
     """Return diagnostic stats about a prompt without calling the LLM."""
     system, user, included, refused = build_prompt(question, chunks, template)
     return {
-        "template":       template,
-        "refused":        refused,
-        "chunks_in":      len(chunks),
-        "chunks_used":    len(included),
-        "system_chars":   len(system),
-        "user_chars":     len(user),
-        "total_chars":    len(system) + len(user),
-        "top_score":      chunks[0].get("score", 0.0) if chunks else 0.0,
-        "truncated":      len(included) < len(chunks),
+        "template": template,
+        "refused": refused,
+        "chunks_in": len(chunks),
+        "chunks_used": len(included),
+        "system_chars": len(system),
+        "user_chars": len(user),
+        "total_chars": len(system) + len(user),
+        "top_score": chunks[0].get("score", 0.0) if chunks else 0.0,
+        "truncated": len(included) < len(chunks),
     }

@@ -29,9 +29,9 @@ retrieval results.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import pickle
-import json
 from pathlib import Path
 from typing import Any
 
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Defaults — override via configs/settings.py
 # ---------------------------------------------------------------------------
-DEFAULT_CHUNK_SIZE    = 900
+DEFAULT_CHUNK_SIZE = 900
 DEFAULT_CHUNK_OVERLAP = 150
 
 # Separators tried in order: paragraph -> sentence -> word -> character
@@ -52,6 +52,7 @@ SEPARATORS = ["\n\n", "\n", ". ", " ", ""]
 # ---------------------------------------------------------------------------
 # Core chunker
 # ---------------------------------------------------------------------------
+
 
 def chunk_pages(
     pages: list[dict[str, Any]],
@@ -84,33 +85,34 @@ def chunk_pages(
             if not chunk_text:
                 continue
 
-            chunk_id = _make_chunk_id(
-                page["file_name"], page["page_number"], chunk_index
-            )
+            chunk_id = _make_chunk_id(page["file_name"], page["page_number"], chunk_index)
 
             chunk = {
-                "chunk_id":    chunk_id,
+                "chunk_id": chunk_id,
                 "chunk_index": chunk_index,
                 # Source metadata
-                "file_name":   page["file_name"],
+                "file_name": page["file_name"],
                 "page_number": page["page_number"],
-                "page_count":  page.get("page_count", 0),
+                "page_count": page.get("page_count", 0),
                 # Paper metadata
-                "title":       page.get("title", ""),
-                "method":      page.get("method", ""),
-                "authors":     page.get("authors", ""),
-                "year":        page.get("year", 0),
-                "venue":       page.get("venue", ""),
+                "title": page.get("title", ""),
+                "method": page.get("method", ""),
+                "authors": page.get("authors", ""),
+                "year": page.get("year", 0),
+                "venue": page.get("venue", ""),
                 # Chunk content
-                "text":        chunk_text,
-                "char_count":  len(chunk_text),
-                "word_count":  len(chunk_text.split()),
+                "text": chunk_text,
+                "char_count": len(chunk_text),
+                "word_count": len(chunk_text.split()),
             }
             all_chunks.append(chunk)
 
     logger.info(
         "Chunked %d pages -> %d chunks (size=%d, overlap=%d)",
-        len(pages), len(all_chunks), chunk_size, chunk_overlap,
+        len(pages),
+        len(all_chunks),
+        chunk_size,
+        chunk_overlap,
     )
     return all_chunks
 
@@ -127,8 +129,7 @@ def chunk_corpus(
     path = Path(extracted_pages_path)
     if not path.exists():
         raise FileNotFoundError(
-            f"Extracted pages not found: {path}\n"
-            "Run notebooks/01_pdf_extraction.ipynb first."
+            f"Extracted pages not found: {path}\nRun notebooks/01_pdf_extraction.ipynb first."
         )
 
     with open(path, "rb") as f:
@@ -158,6 +159,7 @@ def save_chunks(chunks: list[dict[str, Any]], out_path: str | Path) -> None:
 # Stats helper
 # ---------------------------------------------------------------------------
 
+
 def chunk_stats(chunks: list[dict[str, Any]]) -> dict[str, Any]:
     """Return a summary stats dict for a list of chunks."""
     if not chunks:
@@ -165,24 +167,25 @@ def chunk_stats(chunks: list[dict[str, Any]]) -> dict[str, Any]:
 
     word_counts = [c["word_count"] for c in chunks]
     char_counts = [c["char_count"] for c in chunks]
-    methods     = list({c["method"] for c in chunks})
+    methods = list({c["method"] for c in chunks})
 
     return {
         "total_chunks": len(chunks),
-        "papers":       len(methods),
-        "methods":      sorted(methods),
-        "avg_words":    round(sum(word_counts) / len(word_counts), 1),
-        "min_words":    min(word_counts),
-        "max_words":    max(word_counts),
-        "avg_chars":    round(sum(char_counts) / len(char_counts), 1),
-        "min_chars":    min(char_counts),
-        "max_chars":    max(char_counts),
+        "papers": len(methods),
+        "methods": sorted(methods),
+        "avg_words": round(sum(word_counts) / len(word_counts), 1),
+        "min_words": min(word_counts),
+        "max_words": max(word_counts),
+        "avg_chars": round(sum(char_counts) / len(char_counts), 1),
+        "min_chars": min(char_counts),
+        "max_chars": max(char_counts),
     }
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_chunk_id(file_name: str, page_number: int, chunk_index: int) -> str:
     """

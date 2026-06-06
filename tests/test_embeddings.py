@@ -6,21 +6,22 @@ Run from project root: pytest tests/test_embeddings.py -v
 """
 
 import pickle
-import pytest
 from pathlib import Path
 
+import pytest
+
 from src.indexing.embeddings import (
-    load_embedding_model,
-    embed_texts,
     embed_chunks,
     embed_query,
+    embed_texts,
     get_embedding_dim,
+    load_embedding_model,
 )
 from src.indexing.vector_store import (
-    load_vector_store,
-    reset_vector_store,
     index_chunks,
+    load_vector_store,
     query_collection,
+    reset_vector_store,
 )
 
 CHUNKS_PKL = Path("data/processed/chunks.pkl")
@@ -29,6 +30,7 @@ CHUNKS_PKL = Path("data/processed/chunks.pkl")
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def model():
@@ -39,12 +41,12 @@ def model():
 def sample_chunks():
     with open(CHUNKS_PKL, "rb") as f:
         chunks = pickle.load(f)
-    return chunks[:20]   # small slice for speed
+    return chunks[:20]  # small slice for speed
 
 
 @pytest.fixture(scope="module")
 def embedded_chunks(sample_chunks):
-    chunks = [dict(c) for c in sample_chunks]   # copy to avoid mutating fixture
+    chunks = [dict(c) for c in sample_chunks]  # copy to avoid mutating fixture
     return embed_chunks(chunks, show_progress=False)
 
 
@@ -61,23 +63,23 @@ def fresh_collection(tmp_path):
 # load_embedding_model
 # ---------------------------------------------------------------------------
 
-class TestLoadEmbeddingModel:
 
+class TestLoadEmbeddingModel:
     def test_returns_model(self, model):
         assert model is not None
 
     def test_cached_same_object(self):
         m1 = load_embedding_model()
         m2 = load_embedding_model()
-        assert m1 is m2   # same object, not reloaded
+        assert m1 is m2  # same object, not reloaded
 
 
 # ---------------------------------------------------------------------------
 # embed_texts
 # ---------------------------------------------------------------------------
 
-class TestEmbedTexts:
 
+class TestEmbedTexts:
     def test_returns_list_of_vectors(self, model):
         vectors = embed_texts(["hello world", "super resolution"], show_progress=False)
         assert isinstance(vectors, list)
@@ -102,8 +104,8 @@ class TestEmbedTexts:
 # embed_query
 # ---------------------------------------------------------------------------
 
-class TestEmbedQuery:
 
+class TestEmbedQuery:
     def test_returns_single_vector(self):
         v = embed_query("What loss does SRGAN use?")
         assert isinstance(v, list)
@@ -119,8 +121,8 @@ class TestEmbedQuery:
 # get_embedding_dim
 # ---------------------------------------------------------------------------
 
-class TestGetEmbeddingDim:
 
+class TestGetEmbeddingDim:
     def test_returns_positive_int(self):
         dim = get_embedding_dim()
         assert isinstance(dim, int)
@@ -135,8 +137,8 @@ class TestGetEmbeddingDim:
 # embed_chunks
 # ---------------------------------------------------------------------------
 
-class TestEmbedChunks:
 
+class TestEmbedChunks:
     def test_embedding_key_added(self, embedded_chunks):
         for chunk in embedded_chunks:
             assert "embedding" in chunk
@@ -157,8 +159,8 @@ class TestEmbedChunks:
 # index_chunks + query_collection
 # ---------------------------------------------------------------------------
 
-class TestVectorStore:
 
+class TestVectorStore:
     def test_index_and_count(self, fresh_collection, embedded_chunks):
         index_chunks(fresh_collection, embedded_chunks)
         assert fresh_collection.count() == len(embedded_chunks)
@@ -191,6 +193,6 @@ class TestVectorStore:
         assert scores == sorted(scores, reverse=True)
 
     def test_no_embeddings_raises(self, fresh_collection, sample_chunks):
-        raw = [dict(c) for c in sample_chunks]   # no embedding key
+        raw = [dict(c) for c in sample_chunks]  # no embedding key
         with pytest.raises(ValueError, match="embedding"):
             index_chunks(fresh_collection, raw)

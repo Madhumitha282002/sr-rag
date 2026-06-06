@@ -5,14 +5,16 @@ Run from project root: pytest tests/test_chunker.py -v
 """
 
 import pickle
-import pytest
 from pathlib import Path
+
+import pytest
+
 from src.ingestion.chunker import (
-    chunk_pages,
+    _make_chunk_id,
     chunk_corpus,
+    chunk_pages,
     chunk_stats,
     save_chunks,
-    _make_chunk_id,
 )
 
 EXTRACTED_PAGES_PKL = Path("data/processed/extracted_pages.pkl")
@@ -21,6 +23,7 @@ EXTRACTED_PAGES_PKL = Path("data/processed/extracted_pages.pkl")
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def sample_pages():
@@ -34,30 +37,30 @@ def tiny_pages():
     """Minimal synthetic pages for fast unit tests."""
     return [
         {
-            "file_name":   "fake_2020.pdf",
+            "file_name": "fake_2020.pdf",
             "page_number": 1,
-            "page_count":  5,
-            "title":       "Fake Paper",
-            "method":      "FakeNet",
-            "authors":     "Nobody",
-            "year":        2020,
-            "venue":       "FakeConf",
-            "text":        "Super resolution improves image quality. " * 40,
-            "char_count":  1600,
-            "word_count":  240,
+            "page_count": 5,
+            "title": "Fake Paper",
+            "method": "FakeNet",
+            "authors": "Nobody",
+            "year": 2020,
+            "venue": "FakeConf",
+            "text": "Super resolution improves image quality. " * 40,
+            "char_count": 1600,
+            "word_count": 240,
         },
         {
-            "file_name":   "fake_2020.pdf",
+            "file_name": "fake_2020.pdf",
             "page_number": 2,
-            "page_count":  5,
-            "title":       "Fake Paper",
-            "method":      "FakeNet",
-            "authors":     "Nobody",
-            "year":        2020,
-            "venue":       "FakeConf",
-            "text":        "The loss function uses perceptual features. " * 40,
-            "char_count":  1720,
-            "word_count":  280,
+            "page_count": 5,
+            "title": "Fake Paper",
+            "method": "FakeNet",
+            "authors": "Nobody",
+            "year": 2020,
+            "venue": "FakeConf",
+            "text": "The loss function uses perceptual features. " * 40,
+            "char_count": 1720,
+            "word_count": 280,
         },
     ]
 
@@ -66,8 +69,8 @@ def tiny_pages():
 # chunk_pages
 # ---------------------------------------------------------------------------
 
-class TestChunkPages:
 
+class TestChunkPages:
     def test_returns_list(self, tiny_pages):
         chunks = chunk_pages(tiny_pages)
         assert isinstance(chunks, list)
@@ -76,8 +79,16 @@ class TestChunkPages:
     def test_required_keys_present(self, tiny_pages):
         chunks = chunk_pages(tiny_pages)
         required = {
-            "chunk_id", "chunk_index", "file_name", "page_number",
-            "title", "method", "year", "text", "char_count", "word_count",
+            "chunk_id",
+            "chunk_index",
+            "file_name",
+            "page_number",
+            "title",
+            "method",
+            "year",
+            "text",
+            "char_count",
+            "word_count",
         }
         for chunk in chunks:
             assert required.issubset(chunk.keys())
@@ -113,16 +124,27 @@ class TestChunkPages:
     def test_respects_chunk_size(self, tiny_pages):
         chunks = chunk_pages(tiny_pages, chunk_size=300, chunk_overlap=50)
         oversized = [c for c in chunks if c["char_count"] > 400]
-        assert len(oversized) == 0, \
-            f"{len(oversized)} chunks exceed size limit"
+        assert len(oversized) == 0, f"{len(oversized)} chunks exceed size limit"
 
     def test_empty_pages_list(self):
         assert chunk_pages([]) == []
 
     def test_page_with_empty_text_skipped(self):
-        pages = [{"file_name": "x.pdf", "page_number": 1, "page_count": 1,
-                  "title": "", "method": "", "authors": "", "year": 0,
-                  "venue": "", "text": "", "char_count": 0, "word_count": 0}]
+        pages = [
+            {
+                "file_name": "x.pdf",
+                "page_number": 1,
+                "page_count": 1,
+                "title": "",
+                "method": "",
+                "authors": "",
+                "year": 0,
+                "venue": "",
+                "text": "",
+                "char_count": 0,
+                "word_count": 0,
+            }
+        ]
         assert chunk_pages(pages) == []
 
 
@@ -130,8 +152,8 @@ class TestChunkPages:
 # chunk_corpus (integration)
 # ---------------------------------------------------------------------------
 
-class TestChunkCorpus:
 
+class TestChunkCorpus:
     def test_loads_and_chunks_pkl(self):
         chunks = chunk_corpus(EXTRACTED_PAGES_PKL)
         assert len(chunks) > 200, f"Expected >200 chunks, got {len(chunks)}"
@@ -150,8 +172,8 @@ class TestChunkCorpus:
 # chunk_stats
 # ---------------------------------------------------------------------------
 
-class TestChunkStats:
 
+class TestChunkStats:
     def test_returns_expected_keys(self, tiny_pages):
         chunks = chunk_pages(tiny_pages)
         stats = chunk_stats(chunks)
@@ -166,8 +188,8 @@ class TestChunkStats:
 # save_chunks
 # ---------------------------------------------------------------------------
 
-class TestSaveChunks:
 
+class TestSaveChunks:
     def test_saves_json_and_pkl(self, tmp_path, tiny_pages):
         chunks = chunk_pages(tiny_pages)
         out = tmp_path / "chunks"
@@ -189,8 +211,8 @@ class TestSaveChunks:
 # _make_chunk_id
 # ---------------------------------------------------------------------------
 
-class TestMakeChunkId:
 
+class TestMakeChunkId:
     def test_format(self):
         cid = _make_chunk_id("srgan_2016.pdf", 3, 1)
         assert cid == "srgan_2016_p03_c01"

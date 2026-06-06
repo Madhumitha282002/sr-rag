@@ -4,9 +4,9 @@ api/main.py - with direct ChromaDB test endpoint
 
 from __future__ import annotations
 
+import csv
 import logging
 import time
-import csv
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -14,11 +14,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from pyparsing import col
 
 from src.indexing.vector_store import load_vector_store, query_collection
-from src.pipeline import SRRagPipeline
 from src.monitoring.logger import setup_logging
+from src.pipeline import SRRagPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,9 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 
 class QueryRequest(BaseModel):
-    question: str = Field(..., min_length=3, max_length=500, example="What loss function does SRGAN use?")
+    question: str = Field(
+        ..., min_length=3, max_length=500, example="What loss function does SRGAN use?"
+    )
     top_k: int = Field(5, ge=1, le=15)
     use_reranker: bool = Field(False)
     prompt_template: str = Field("v2")
@@ -100,15 +101,14 @@ class FeedbackResponse(BaseModel):
 
 @app.get("/debug", tags=["System"])
 async def debug() -> dict:
-    from src.indexing.vector_store import load_vector_store
     vs_path = str(PROJECT_ROOT / "vector_store")
     col = load_vector_store(persist_dir=vs_path, collection_name="sr_papers")
     return {
-        "project_root":    str(PROJECT_ROOT),
-        "vector_store":    vs_path,
-        "chunk_count":     col.count(),
-        "pipeline_none":   pipeline is None,
-        "retriever_path":  str(pipeline.retriever.persist_dir) if pipeline else "N/A",
+        "project_root": str(PROJECT_ROOT),
+        "vector_store": vs_path,
+        "chunk_count": col.count(),
+        "pipeline_none": pipeline is None,
+        "retriever_path": str(pipeline.retriever.persist_dir) if pipeline else "N/A",
         "pipeline_chunks": pipeline.info()["total_chunks"] if pipeline else 0,
     }
 
@@ -117,7 +117,6 @@ async def debug() -> dict:
 async def test_query() -> dict:
     """Bypass pipeline entirely — query ChromaDB directly."""
     from src.indexing.embeddings import embed_query
-    from src.indexing.vector_store import load_vector_store, query_collection
 
     vs_path = str(PROJECT_ROOT / "vector_store")
     col = load_vector_store(persist_dir=vs_path, collection_name="sr_papers")
@@ -129,18 +128,18 @@ async def test_query() -> dict:
     return {
         "collection_count": count,
         "results_returned": len(results),
-        "top_score":  results[0]["score"]  if results else 0,
+        "top_score": results[0]["score"] if results else 0,
         "top_method": results[0]["method"] if results else "none",
-        "top_text":   results[0]["text"][:100] if results else "none",
+        "top_text": results[0]["text"][:100] if results else "none",
     }
+
 
 @app.post("/query-direct", tags=["System"])
 async def query_direct(request: QueryRequest) -> dict:
     """Bypass pipeline class — do everything inline like test-query."""
-    from src.indexing.embeddings import embed_query
-    from src.indexing.vector_store import load_vector_store, query_collection
     from src.generation.answer_generator import generate_answer
     from src.generation.citations import format_answer_with_citations
+    from src.indexing.embeddings import embed_query
 
     vs_path = str(PROJECT_ROOT / "vector_store")
     col = load_vector_store(persist_dir=vs_path, collection_name="sr_papers")
@@ -156,9 +155,14 @@ async def query_direct(request: QueryRequest) -> dict:
         "top_method": chunks[0]["method"] if chunks else "none",
     }
 
+
 @app.get("/health", tags=["System"])
 async def health() -> dict[str, Any]:
-    return {"status": "ok", "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "pipeline": pipeline is not None}
+    return {
+        "status": "ok",
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "pipeline": pipeline is not None,
+    }
 
 
 @app.get("/info", tags=["System"])
@@ -176,23 +180,29 @@ async def corpus(sort_by: str = Query("year")) -> dict[str, Any]:
     papers = []
     with open(csv_path, encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            papers.append({
-                "method": row.get("method", ""), "title": row.get("title", ""),
-                "authors": row.get("authors", ""), "year": int(row.get("year", 0)),
-                "venue": row.get("venue", ""), "datasets": row.get("datasets", ""),
-                "key_contribution": row.get("key_contribution", ""), "source_url": row.get("source_url", ""),
-            })
+            papers.append(
+                {
+                    "method": row.get("method", ""),
+                    "title": row.get("title", ""),
+                    "authors": row.get("authors", ""),
+                    "year": int(row.get("year", 0)),
+                    "venue": row.get("venue", ""),
+                    "datasets": row.get("datasets", ""),
+                    "key_contribution": row.get("key_contribution", ""),
+                    "source_url": row.get("source_url", ""),
+                }
+            )
     papers.sort(key=lambda p: p.get(sort_by, ""), reverse=(sort_by == "year"))
     return {"total": len(papers), "papers": papers}
 
 
 @app.post("/query", response_model=QueryResponse, tags=["Query"])
 async def query(request: QueryRequest) -> QueryResponse:
-    from src.indexing.embeddings import embed_query
-    from src.indexing.vector_store import load_vector_store, query_collection
-    from src.generation.answer_generator import generate_answer
-    from src.generation.citations import validate_citations, format_answer_with_citations
     import time
+
+    from src.generation.answer_generator import generate_answer
+    from src.generation.citations import format_answer_with_citations, validate_citations
+    from src.indexing.embeddings import embed_query
 
     vs_path = str(PROJECT_ROOT / "vector_store")
     t_start = time.time()
@@ -212,8 +222,8 @@ async def query(request: QueryRequest) -> QueryResponse:
 
     try:
         t_ret = time.time()
-        qv     = embed_query(request.question)
-        col    = load_vector_store(persist_dir=vs_path, collection_name="sr_papers")
+        qv = embed_query(request.question)
+        col = load_vector_store(persist_dir=vs_path, collection_name="sr_papers")
         chunks = query_collection(col, qv, top_k=request.top_k, where=where)
         retrieval_ms = (time.time() - t_ret) * 1000
 
@@ -228,8 +238,10 @@ async def query(request: QueryRequest) -> QueryResponse:
                 citations_valid=True,
                 refused=False,
                 token_usage=TokenUsageModel(
-                    prompt_tokens=0, completion_tokens=0,
-                    total_tokens=0, estimated_cost_usd=0.0,
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    total_tokens=0,
+                    estimated_cost_usd=0.0,
                 ),
                 retrieval_ms=round(retrieval_ms, 1),
                 rerank_ms=0.0,
@@ -292,6 +304,7 @@ async def query(request: QueryRequest) -> QueryResponse:
         model=gen.get("model", ""),
         use_reranker=False,
     )
+
 
 @app.post("/feedback", response_model=FeedbackResponse, tags=["Query"])
 async def feedback(request: FeedbackRequest) -> FeedbackResponse:

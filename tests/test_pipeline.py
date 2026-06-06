@@ -5,12 +5,13 @@ Run from project root: pytest tests/test_pipeline.py -v
 """
 
 import pytest
-from src.pipeline import SRRagPipeline
 
+from src.pipeline import SRRagPipeline
 
 # ---------------------------------------------------------------------------
 # Fixture — one pipeline instance shared across all tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def pipeline():
@@ -25,15 +26,22 @@ def pipeline():
 # pipeline.query
 # ---------------------------------------------------------------------------
 
-class TestPipelineQuery:
 
+class TestPipelineQuery:
     def test_returns_required_keys(self, pipeline):
         result = pipeline.query("What loss does SRGAN use?")
         required = {
-            "question", "answer", "answer_full", "sources",
-            "citations_valid", "token_usage",
-            "retrieval_ms", "generation_ms", "total_ms",
-            "provider", "model",
+            "question",
+            "answer",
+            "answer_full",
+            "sources",
+            "citations_valid",
+            "token_usage",
+            "retrieval_ms",
+            "generation_ms",
+            "total_ms",
+            "provider",
+            "model",
         }
         assert required.issubset(result.keys())
 
@@ -99,23 +107,17 @@ class TestPipelineQuery:
 # pipeline.query_with_filter
 # ---------------------------------------------------------------------------
 
-class TestPipelineQueryWithFilter:
 
+class TestPipelineQueryWithFilter:
     def test_method_filter(self, pipeline):
-        result = pipeline.query_with_filter(
-            "loss function", method="SRGAN", top_k=5
-        )
+        result = pipeline.query_with_filter("loss function", method="SRGAN", top_k=5)
         for src in result["sources"]:
-            assert src["method"] == "SRGAN", \
-                f"Expected SRGAN, got {src['method']}"
+            assert src["method"] == "SRGAN", f"Expected SRGAN, got {src['method']}"
 
     def test_year_filter(self, pipeline):
-        result = pipeline.query_with_filter(
-            "attention mechanism", year_from=2021, top_k=5
-        )
+        result = pipeline.query_with_filter("attention mechanism", year_from=2021, top_k=5)
         for src in result["sources"]:
-            assert src["year"] >= 2021, \
-                f"Expected year >= 2021, got {src['year']}"
+            assert src["year"] >= 2021, f"Expected year >= 2021, got {src['year']}"
 
     def test_no_filter_same_as_query(self, pipeline):
         result = pipeline.query_with_filter("perceptual loss")
@@ -126,8 +128,8 @@ class TestPipelineQueryWithFilter:
 # pipeline.info
 # ---------------------------------------------------------------------------
 
-class TestPipelineInfo:
 
+class TestPipelineInfo:
     def test_returns_info_dict(self, pipeline):
         info = pipeline.info()
         for key in ["collection_name", "total_chunks", "embedding_model"]:

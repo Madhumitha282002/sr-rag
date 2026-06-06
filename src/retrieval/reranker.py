@@ -39,6 +39,7 @@ _reranker_cache: dict[str, Any] = {}
 # Model loader
 # ---------------------------------------------------------------------------
 
+
 def load_reranker(model_name: str = DEFAULT_RERANKER_MODEL):
     """
     Load a cross-encoder model, caching it in memory.
@@ -64,6 +65,7 @@ def load_reranker(model_name: str = DEFAULT_RERANKER_MODEL):
 # Reranker class
 # ---------------------------------------------------------------------------
 
+
 class Reranker:
     """
     Cross-encoder reranker. Instantiate once and reuse.
@@ -75,7 +77,7 @@ class Reranker:
 
     def __init__(self, model_name: str = DEFAULT_RERANKER_MODEL):
         self.model_name = model_name
-        self._model = None   # lazy-loaded
+        self._model = None  # lazy-loaded
 
     @property
     def model(self):
@@ -115,12 +117,14 @@ class Reranker:
         # Attach reranker scores and sort
         reranked = []
         for chunk, score in zip(chunks, scores):
-            reranked.append({
-                **chunk,
-                "dense_score":    chunk.get("score", 0.0),   # original retrieval score
-                "reranker_score": float(score),
-                "score":          float(score),               # overwrite for downstream compat
-            })
+            reranked.append(
+                {
+                    **chunk,
+                    "dense_score": chunk.get("score", 0.0),  # original retrieval score
+                    "reranker_score": float(score),
+                    "score": float(score),  # overwrite for downstream compat
+                }
+            )
 
         reranked.sort(key=lambda x: x["reranker_score"], reverse=True)
 

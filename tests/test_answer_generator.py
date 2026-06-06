@@ -1,120 +1,137 @@
 """
-tests/test_answer_generator.py
-Tests for src/generation/answer_generator.py and src/generation/citations.py
-Run from project root: pytest tests/test_answer_generator.py -v
+tests/test_answer_generator.py  (updated for Day 10)
+-----------------------------------------------------
+build_prompt now lives in prompt_manager and returns 4 values:
+    (system_prompt, user_prompt, included_chunks, refused)
+
+Sample chunks now include a 'score' field above the refusal
+threshold so they are not rejected by should_refuse().
 """
 
 import pytest
-from src.generation.answer_generator import (
-    build_prompt,
-    generate_answer,
-)
-from src.generation.citations import (
-    format_citations,
-    extract_cited_indices,
-    validate_citations,
-    format_answer_with_citations,
-)
 
+from src.generation.answer_generator import generate_answer
+from src.generation.citations import (
+    extract_cited_indices,
+    format_answer_with_citations,
+    format_citations,
+    validate_citations,
+)
+from src.generation.prompt_manager import build_prompt
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_chunks():
     return [
         {
-            "chunk_id":       "srgan_2016_p04_c01",
-            "chunk_index":    0,
-            "file_name":      "srgan_2016.pdf",
-            "title":          "Photo-Realistic SR Using GANs",
-            "method":         "SRGAN",
-            "authors":        "Ledig et al.",
-            "year":           2016,
-            "venue":          "CVPR",
-            "page_number":    4,
-            "page_count":     16,
-            "text":           (
+            "chunk_id": "srgan_2016_p04_c01",
+            "chunk_index": 0,
+            "file_name": "srgan_2016.pdf",
+            "title": "Photo-Realistic SR Using GANs",
+            "method": "SRGAN",
+            "authors": "Ledig et al.",
+            "year": 2016,
+            "venue": "CVPR",
+            "page_number": 4,
+            "page_count": 16,
+            "score": 0.82,  # above MIN_ANSWER_SCORE
+            "citation_index": 1,
+            "text": (
                 "We propose a perceptual loss function which consists of an "
                 "adversarial loss and a content loss. The adversarial loss pushes "
                 "our solution to the natural image manifold using a discriminator "
                 "network that is trained to differentiate between the super-resolved "
                 "images and original photo-realistic images."
             ),
-            "char_count":     300,
-            "word_count":     52,
-            "citation_index": 1,
+            "char_count": 300,
+            "word_count": 52,
         },
         {
-            "chunk_id":       "swinir_2021_p03_c02",
-            "chunk_index":    1,
-            "file_name":      "swinir_2021.pdf",
-            "title":          "SwinIR: Image Restoration Using Swin Transformer",
-            "method":         "SwinIR",
-            "authors":        "Liang et al.",
-            "year":           2021,
-            "venue":          "ICCVW",
-            "page_number":    3,
-            "page_count":     14,
-            "text":           (
+            "chunk_id": "swinir_2021_p03_c02",
+            "chunk_index": 1,
+            "file_name": "swinir_2021.pdf",
+            "title": "SwinIR: Image Restoration Using Swin Transformer",
+            "method": "SwinIR",
+            "authors": "Liang et al.",
+            "year": 2021,
+            "venue": "ICCVW",
+            "page_number": 3,
+            "page_count": 14,
+            "score": 0.74,  # above MIN_ANSWER_SCORE
+            "citation_index": 2,
+            "text": (
                 "SwinIR is based on the Swin Transformer and consists of three "
                 "parts: shallow feature extraction, deep feature extraction, and "
                 "high-quality image reconstruction. The deep feature extraction "
                 "module is composed of several residual Swin Transformer blocks."
             ),
-            "char_count":     290,
-            "word_count":     48,
-            "citation_index": 2,
+            "char_count": 290,
+            "word_count": 48,
         },
     ]
 
 
 # ---------------------------------------------------------------------------
-# build_prompt
+# build_prompt  (now returns 4 values: system, user, included, refused)
 # ---------------------------------------------------------------------------
 
-class TestBuildPrompt:
 
-    def test_returns_tuple(self, sample_chunks):
-        prompt, included = build_prompt("What is perceptual loss?", sample_chunks)
-        assert isinstance(prompt, str)
-        assert isinstance(included, list)
+class TestBuildPrompt:
+    def test_returns_four_values(self, sample_chunks):
+        result = build_prompt("What is perceptual loss?", sample_chunks)
+        assert len(result) == 4
 
     def test_question_in_prompt(self, sample_chunks):
-        prompt, _ = build_prompt("What is perceptual loss?", sample_chunks)
-        assert "perceptual loss" in prompt.lower()
+        _, user, _, _ = build_prompt("What is perceptual loss?", sample_chunks)
+        assert "perceptual loss" in user.lower()
 
     def test_chunk_text_in_prompt(self, sample_chunks):
-        prompt, _ = build_prompt("test question", sample_chunks)
-        assert "adversarial loss" in prompt
+        _, user, _, _ = build_prompt("test question", sample_chunks)
+        assert "adversarial loss" in user
 
     def test_all_chunks_included_when_small(self, sample_chunks):
-        _, included = build_prompt("test", sample_chunks)
+        _, _, included, _ = build_prompt("test", sample_chunks)
         assert len(included) == len(sample_chunks)
+
+    def test_not_refused_with_good_chunks(self, sample_chunks):
+        _, _, _, refused = build_prompt("test", sample_chunks)
+        assert refused is False
 
     def test_context_truncated_when_too_large(self):
         big_chunks = [
             {
-                "chunk_id": f"x_p01_c{i:02d}", "chunk_index": i,
-                "file_name": "big.pdf", "title": "Big", "method": "BigNet",
-                "authors": "A", "year": 2020, "venue": "X",
-                "page_number": 1, "page_count": 10,
+                "chunk_id": f"x_p01_c{i:02d}",
+                "chunk_index": i,
+                "file_name": "big.pdf",
+                "title": "Big",
+                "method": "BigNet",
+                "authors": "A",
+                "year": 2020,
+                "venue": "X",
+                "page_number": 1,
+                "page_count": 10,
+                "score": 0.9 - i * 0.01,
                 "text": "word " * 1000,
-                "char_count": 5000, "word_count": 1000, "citation_index": i + 1,
+                "char_count": 5000,
+                "word_count": 1000,
+                "citation_index": i + 1,
             }
             for i in range(10)
         ]
-        prompt, included = build_prompt("test", big_chunks)
+        _, _, included, _ = build_prompt("test", big_chunks)
         assert len(included) < 10
 
 
 # ---------------------------------------------------------------------------
-# generate_answer (mock mode — no API key needed)
+# generate_answer (mock mode)
 # ---------------------------------------------------------------------------
 
-class TestGenerateAnswer:
 
+class TestGenerateAnswer:
     def test_returns_required_keys(self, sample_chunks):
         result = generate_answer(
             question="What loss does SRGAN use?",
@@ -122,7 +139,7 @@ class TestGenerateAnswer:
             provider="mock",
         )
         for key in ["answer", "sources", "token_usage", "latency_ms", "provider", "model"]:
-            assert key in result, f"Missing key: {key}"
+            assert key in result
 
     def test_answer_is_string(self, sample_chunks):
         result = generate_answer("test", sample_chunks, provider="mock")
@@ -136,9 +153,9 @@ class TestGenerateAnswer:
     def test_token_usage_keys(self, sample_chunks):
         result = generate_answer("test", sample_chunks, provider="mock")
         usage = result["token_usage"]
-        assert "prompt_tokens"     in usage
+        assert "prompt_tokens" in usage
         assert "completion_tokens" in usage
-        assert "total_tokens"      in usage
+        assert "total_tokens" in usage
         assert "estimated_cost_usd" in usage
 
     def test_latency_is_positive(self, sample_chunks):
@@ -149,17 +166,21 @@ class TestGenerateAnswer:
         result = generate_answer("test", sample_chunks, provider="mock")
         assert result["provider"] == "mock"
 
-    def test_empty_chunks_still_returns(self):
+    def test_empty_chunks_refused(self):
         result = generate_answer("test", [], provider="mock")
-        assert "answer" in result
+        assert result.get("refused") is True
+
+    def test_refused_key_present(self, sample_chunks):
+        result = generate_answer("test", sample_chunks, provider="mock")
+        assert "refused" in result
 
 
 # ---------------------------------------------------------------------------
-# citations
+# citations (unchanged)
 # ---------------------------------------------------------------------------
+
 
 class TestFormatCitations:
-
     def test_returns_list(self, sample_chunks):
         citations = format_citations(sample_chunks)
         assert isinstance(citations, list)
@@ -177,7 +198,6 @@ class TestFormatCitations:
 
 
 class TestExtractCitedIndices:
-
     def test_single_citation(self):
         assert extract_cited_indices("see [1] for details") == [1]
 
@@ -192,7 +212,6 @@ class TestExtractCitedIndices:
 
 
 class TestValidateCitations:
-
     def test_valid_when_all_cited(self, sample_chunks):
         answer = "SRGAN uses perceptual loss [1]. SwinIR uses transformers [2]."
         report = validate_citations(answer, sample_chunks)
@@ -212,7 +231,6 @@ class TestValidateCitations:
 
 
 class TestFormatAnswerWithCitations:
-
     def test_appends_references_section(self, sample_chunks):
         result = format_answer_with_citations("The answer is X [1].", sample_chunks)
         assert "References" in result

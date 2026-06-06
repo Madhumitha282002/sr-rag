@@ -8,12 +8,13 @@ Subsequent runs use the cached model and are fast.
 """
 
 import pytest
-from src.retrieval.reranker import Reranker, rerank
 
+from src.retrieval.reranker import Reranker, rerank
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def reranker():
@@ -33,13 +34,15 @@ def sample_chunks():
             "citation_index": i + 1,
             "text": text,
         }
-        for i, text in enumerate([
-            "We propose a perceptual loss function consisting of adversarial loss and content loss for super-resolution.",
-            "The generator network upscales the low-resolution input image using residual blocks.",
-            "We evaluate our method on Set5 and BSD100 datasets using PSNR and SSIM metrics.",
-            "The training procedure uses Adam optimiser with a learning rate of 1e-4.",
-            "Related work includes bicubic interpolation and sparse coding approaches.",
-        ])
+        for i, text in enumerate(
+            [
+                "We propose a perceptual loss function consisting of adversarial loss and content loss for super-resolution.",
+                "The generator network upscales the low-resolution input image using residual blocks.",
+                "We evaluate our method on Set5 and BSD100 datasets using PSNR and SSIM metrics.",
+                "The training procedure uses Adam optimiser with a learning rate of 1e-4.",
+                "Related work includes bicubic interpolation and sparse coding approaches.",
+            ]
+        )
     ]
 
 
@@ -47,8 +50,8 @@ def sample_chunks():
 # Reranker.rerank
 # ---------------------------------------------------------------------------
 
-class TestReranker:
 
+class TestReranker:
     def test_returns_list(self, reranker, sample_chunks):
         result = reranker.rerank("What loss does SRGAN use?", sample_chunks)
         assert isinstance(result, list)
@@ -112,8 +115,8 @@ class TestReranker:
 # Functional interface
 # ---------------------------------------------------------------------------
 
-class TestRerankFunction:
 
+class TestRerankFunction:
     def test_rerank_function_works(self, sample_chunks):
         result = rerank("perceptual loss", sample_chunks, top_k=3)
         assert len(result) == 3

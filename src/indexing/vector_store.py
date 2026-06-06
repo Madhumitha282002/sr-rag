@@ -21,7 +21,7 @@ from chromadb.config import Settings as ChromaSettings
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_COLLECTION   = "sr_papers"
+DEFAULT_COLLECTION = "sr_papers"
 DEFAULT_VECTOR_STORE = "vector_store"
 
 # ---------------------------------------------------------------------------
@@ -45,6 +45,7 @@ def _get_client(persist_dir: str) -> chromadb.PersistentClient:
 # Client + collection loader
 # ---------------------------------------------------------------------------
 
+
 def load_vector_store(
     persist_dir: str | Path = DEFAULT_VECTOR_STORE,
     collection_name: str = DEFAULT_COLLECTION,
@@ -64,7 +65,9 @@ def load_vector_store(
     count = collection.count()
     logger.info(
         "Opened collection '%s' at %s (%d chunks indexed)",
-        collection_name, persist_dir, count,
+        collection_name,
+        persist_dir,
+        count,
     )
     return collection
 
@@ -104,6 +107,7 @@ def reset_vector_store(
 # Indexing
 # ---------------------------------------------------------------------------
 
+
 def index_chunks(
     collection: chromadb.Collection,
     chunks: list[dict[str, Any]],
@@ -116,8 +120,7 @@ def index_chunks(
 
     if "embedding" not in chunks[0]:
         raise ValueError(
-            "Chunks must have 'embedding' key. "
-            "Run embed_chunks() before index_chunks()."
+            "Chunks must have 'embedding' key. Run embed_chunks() before index_chunks()."
         )
 
     total = len(chunks)
@@ -139,23 +142,24 @@ def index_chunks(
 
 def _build_metadata(chunk: dict[str, Any]) -> dict:
     return {
-        "file_name":   str(chunk.get("file_name", "")),
-        "title":       str(chunk.get("title", "")),
-        "method":      str(chunk.get("method", "")),
-        "authors":     str(chunk.get("authors", "")),
-        "year":        int(chunk.get("year", 0)),
-        "venue":       str(chunk.get("venue", "")),
+        "file_name": str(chunk.get("file_name", "")),
+        "title": str(chunk.get("title", "")),
+        "method": str(chunk.get("method", "")),
+        "authors": str(chunk.get("authors", "")),
+        "year": int(chunk.get("year", 0)),
+        "venue": str(chunk.get("venue", "")),
         "page_number": int(chunk.get("page_number", 0)),
-        "page_count":  int(chunk.get("page_count", 0)),
+        "page_count": int(chunk.get("page_count", 0)),
         "chunk_index": int(chunk.get("chunk_index", 0)),
-        "word_count":  int(chunk.get("word_count", 0)),
-        "char_count":  int(chunk.get("char_count", 0)),
+        "word_count": int(chunk.get("word_count", 0)),
+        "char_count": int(chunk.get("char_count", 0)),
     }
 
 
 # ---------------------------------------------------------------------------
 # Querying
 # ---------------------------------------------------------------------------
+
 
 def query_collection(
     collection: chromadb.Collection,
@@ -180,16 +184,18 @@ def query_collection(
         raw["metadatas"][0],
         raw["distances"][0],
     ):
-        results.append({
-            "text":           doc,
-            "score":          round(1 - dist, 4),
-            "chunk_id":       meta.get("chunk_id", ""),
-            "file_name":      meta.get("file_name", ""),
-            "title":          meta.get("title", ""),
-            "method":         meta.get("method", ""),
-            "year":           meta.get("year", 0),
-            "page_number":    meta.get("page_number", 0),
-            "citation_index": len(results) + 1,
-        })
+        results.append(
+            {
+                "text": doc,
+                "score": round(1 - dist, 4),
+                "chunk_id": meta.get("chunk_id", ""),
+                "file_name": meta.get("file_name", ""),
+                "title": meta.get("title", ""),
+                "method": meta.get("method", ""),
+                "year": meta.get("year", 0),
+                "page_number": meta.get("page_number", 0),
+                "citation_index": len(results) + 1,
+            }
+        )
 
     return results

@@ -21,10 +21,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # JSON formatter
 # ---------------------------------------------------------------------------
+
 
 class JSONFormatter(logging.Formatter):
     """
@@ -34,11 +34,9 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_obj: dict[str, Any] = {
-            "timestamp": time.strftime(
-                "%Y-%m-%dT%H:%M:%SZ", time.gmtime(record.created)
-            ),
-            "level":   record.levelname,
-            "logger":  record.name,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(record.created)),
+            "level": record.levelname,
+            "logger": record.name,
             "message": record.getMessage(),
         }
         if record.exc_info:
@@ -49,6 +47,7 @@ class JSONFormatter(logging.Formatter):
 # ---------------------------------------------------------------------------
 # Setup function
 # ---------------------------------------------------------------------------
+
 
 def setup_logging(
     log_dir: str | Path = "logs",
@@ -76,9 +75,7 @@ def setup_logging(
     root.setLevel(level)
 
     # File handler — JSON
-    file_handler = logging.FileHandler(
-        log_dir / log_file, encoding="utf-8"
-    )
+    file_handler = logging.FileHandler(log_dir / log_file, encoding="utf-8")
     file_handler.setFormatter(JSONFormatter())
     file_handler.setLevel(level)
     root.addHandler(file_handler)
@@ -129,19 +126,19 @@ def log_query_event(
     """
     QUERY_LOG.parent.mkdir(parents=True, exist_ok=True)
     record = {
-        "timestamp":     time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "type":          "query",
-        "question":      question[:200],
-        "answer":        answer[:300],
-        "provider":      provider,
-        "model":         model,
-        "refused":       refused,
-        "use_reranker":  use_reranker,
-        "latency_ms":    round(latency_ms, 1),
-        "retrieval_ms":  round(retrieval_ms, 1),
-        "rerank_ms":     round(rerank_ms, 1),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "type": "query",
+        "question": question[:200],
+        "answer": answer[:300],
+        "provider": provider,
+        "model": model,
+        "refused": refused,
+        "use_reranker": use_reranker,
+        "latency_ms": round(latency_ms, 1),
+        "retrieval_ms": round(retrieval_ms, 1),
+        "rerank_ms": round(rerank_ms, 1),
         "generation_ms": round(generation_ms, 1),
-        "token_usage":   token_usage,
+        "token_usage": token_usage,
     }
     with open(QUERY_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
@@ -156,10 +153,10 @@ def log_feedback_event(
     QUERY_LOG.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "type":      "feedback",
-        "question":  question[:200],
-        "answer":    answer[:300],
-        "helpful":   helpful,
+        "type": "feedback",
+        "question": question[:200],
+        "answer": answer[:300],
+        "helpful": helpful,
     }
     with open(QUERY_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
@@ -168,6 +165,7 @@ def log_feedback_event(
 # ---------------------------------------------------------------------------
 # Log reader helper (used by analyze_logs.py and the notebook)
 # ---------------------------------------------------------------------------
+
 
 def load_query_log(
     log_path: str | Path = QUERY_LOG,

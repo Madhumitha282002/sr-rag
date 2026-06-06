@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Retriever class
 # ---------------------------------------------------------------------------
 
+
 class Retriever:
     """
     Stateful retriever that holds open connections to the embedding
@@ -39,10 +40,10 @@ class Retriever:
         collection_name: str = "sr_papers",
         embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
     ):
-        self.persist_dir      = persist_dir
-        self.collection_name  = collection_name
-        self.embedding_model  = embedding_model
-        self._collection      = None   # lazy-loaded
+        self.persist_dir = persist_dir
+        self.collection_name = collection_name
+        self.embedding_model = embedding_model
+        self._collection = None  # lazy-loaded
 
     @property
     def collection(self):
@@ -84,9 +85,7 @@ class Retriever:
 
         t0 = time.time()
         qv = embed_query(cleaned, model_name=self.embedding_model)
-        results = query_collection(
-            self.collection, qv, top_k=top_k, where=where
-        )
+        results = query_collection(self.collection, qv, top_k=top_k, where=where)
         latency_ms = (time.time() - t0) * 1000
 
         if deduplicate:
@@ -98,14 +97,15 @@ class Retriever:
 
         logger.info(
             "Retrieved %d chunks in %.0f ms (top score=%.3f)",
-            len(results), latency_ms,
+            len(results),
+            latency_ms,
             results[0]["score"] if results else 0,
         )
 
         return {
-            "query":        cleaned,
-            "results":      results,
-            "latency_ms":   round(latency_ms, 1),
+            "query": cleaned,
+            "results": results,
+            "latency_ms": round(latency_ms, 1),
             "total_chunks": self.collection.count(),
         }
 
@@ -142,8 +142,8 @@ class Retriever:
         col = self.collection
         return {
             "collection_name": col.name,
-            "total_chunks":    col.count(),
-            "persist_dir":     self.persist_dir,
+            "total_chunks": col.count(),
+            "persist_dir": self.persist_dir,
             "embedding_model": self.embedding_model,
         }
 
@@ -176,6 +176,7 @@ def retrieve(query: str, top_k: int = 5, **kwargs) -> list[dict[str, Any]]:
 # Query preprocessing
 # ---------------------------------------------------------------------------
 
+
 def preprocess_query(query: str) -> str:
     """
     Light query cleaning before embedding:
@@ -185,14 +186,15 @@ def preprocess_query(query: str) -> str:
     - Preserve technical terms like PSNR, SSIM, SRGAN exactly
     """
     query = query.strip()
-    query = re.sub(r"\s+", " ", query)      # collapse whitespace
-    query = re.sub(r"[?!]+$", "", query)    # remove trailing ? or !
+    query = re.sub(r"\s+", " ", query)  # collapse whitespace
+    query = re.sub(r"[?!]+$", "", query)  # remove trailing ? or !
     return query
 
 
 # ---------------------------------------------------------------------------
 # Deduplication
 # ---------------------------------------------------------------------------
+
 
 def _deduplicate(
     results: list[dict[str, Any]],

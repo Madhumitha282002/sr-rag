@@ -33,6 +33,7 @@ _model_cache: dict[str, SentenceTransformer] = {}
 # Model loader
 # ---------------------------------------------------------------------------
 
+
 def load_embedding_model(model_name: str = DEFAULT_MODEL) -> SentenceTransformer:
     """
     Load a sentence-transformer model, caching it in memory.
@@ -49,6 +50,7 @@ def load_embedding_model(model_name: str = DEFAULT_MODEL) -> SentenceTransformer
 # ---------------------------------------------------------------------------
 # Embedding functions
 # ---------------------------------------------------------------------------
+
 
 def embed_texts(
     texts: list[str],
@@ -73,7 +75,9 @@ def embed_texts(
     elapsed = time.time() - t0
     logger.info(
         "Embedded %d texts in %.1f s (%.0f texts/s)",
-        len(texts), elapsed, len(texts) / max(elapsed, 0.001),
+        len(texts),
+        elapsed,
+        len(texts) / max(elapsed, 0.001),
     )
     return vectors.tolist()
 
@@ -89,8 +93,9 @@ def embed_chunks(
     Returns the same list with embeddings attached.
     """
     texts = [c["text"] for c in chunks]
-    vectors = embed_texts(texts, model_name=model_name,
-                          batch_size=batch_size, show_progress=show_progress)
+    vectors = embed_texts(
+        texts, model_name=model_name, batch_size=batch_size, show_progress=show_progress
+    )
 
     for chunk, vector in zip(chunks, vectors):
         chunk["embedding"] = vector

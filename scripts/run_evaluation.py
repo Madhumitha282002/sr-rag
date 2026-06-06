@@ -26,17 +26,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.retrieval.retriever import Retriever
-from src.pipeline import SRRagPipeline
-from src.evaluation.retrieval_metrics import (
-    load_eval_questions,
-    recall_at_k,
-    precision_at_k,
-    mrr,
-    hit_at_k,
-    evaluate_batch,
-)
 from src.evaluation.answer_metrics import evaluate_batch_answers
+from src.evaluation.retrieval_metrics import (
+    evaluate_batch,
+    hit_at_k,
+    load_eval_questions,
+    mrr,
+    precision_at_k,
+    recall_at_k,
+)
+from src.pipeline import SRRagPipeline
+from src.retrieval.retriever import Retriever
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,13 +45,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-EVAL_CSV     = "data/processed/eval_questions.csv"
-K_VALUES     = [1, 3, 5]
+EVAL_CSV = "data/processed/eval_questions.csv"
+K_VALUES = [1, 3, 5]
 
 
 # ---------------------------------------------------------------------------
 # Retrieval evaluation
 # ---------------------------------------------------------------------------
+
 
 def run_retrieval_eval(
     questions: list[dict],
@@ -76,15 +77,17 @@ def run_retrieval_eval(
         latencies.append((time.time() - t0) * 1000)
         retrieved_methods = [c["method"] for c in chunks]
 
-        results.append({
-            "question_id":       q["question_id"],
-            "question":          q["question"],
-            "difficulty":        q["difficulty"],
-            "expected_methods":  q["expected_methods"],
-            "retrieved_methods": retrieved_methods,
-            "refused":           len(chunks) == 0,
-            "latency_ms":        round(latencies[-1], 1),
-        })
+        results.append(
+            {
+                "question_id": q["question_id"],
+                "question": q["question"],
+                "difficulty": q["difficulty"],
+                "expected_methods": q["expected_methods"],
+                "retrieved_methods": retrieved_methods,
+                "refused": len(chunks) == 0,
+                "latency_ms": round(latencies[-1], 1),
+            }
+        )
 
     metrics = evaluate_batch(results, k_values=K_VALUES)
     metrics["avg_latency_ms"] = round(sum(latencies) / len(latencies), 1)
@@ -95,6 +98,7 @@ def run_retrieval_eval(
 # ---------------------------------------------------------------------------
 # Answer quality evaluation
 # ---------------------------------------------------------------------------
+
 
 def run_answer_eval(
     questions: list[dict],
@@ -111,20 +115,22 @@ def run_answer_eval(
         latencies.append((time.time() - t0) * 1000)
         costs.append(result["token_usage"].get("estimated_cost_usd", 0))
 
-        eval_records.append({
-            "question":          q["question"],
-            "question_id":       q["question_id"],
-            "difficulty":        q["difficulty"],
-            "expected_keywords": q["expected_keywords"],
-            "answer":            result["answer"],
-            "sources":           result["sources"],
-            "refused":           result.get("refused", False),
-        })
+        eval_records.append(
+            {
+                "question": q["question"],
+                "question_id": q["question_id"],
+                "difficulty": q["difficulty"],
+                "expected_keywords": q["expected_keywords"],
+                "answer": result["answer"],
+                "sources": result["sources"],
+                "refused": result.get("refused", False),
+            }
+        )
 
     report = evaluate_batch_answers(eval_records)
-    report["overall"]["avg_latency_ms"]    = round(sum(latencies) / len(latencies), 1)
-    report["overall"]["p95_latency_ms"]    = round(sorted(latencies)[int(len(latencies) * 0.95)], 1)
-    report["overall"]["total_cost_usd"]    = round(sum(costs), 6)
+    report["overall"]["avg_latency_ms"] = round(sum(latencies) / len(latencies), 1)
+    report["overall"]["p95_latency_ms"] = round(sorted(latencies)[int(len(latencies) * 0.95)], 1)
+    report["overall"]["total_cost_usd"] = round(sum(costs), 6)
     report["overall"]["mean_cost_per_query"] = round(sum(costs) / len(costs), 8)
 
     return eval_records, report
@@ -133,6 +139,7 @@ def run_answer_eval(
 # ---------------------------------------------------------------------------
 # Report printer
 # ---------------------------------------------------------------------------
+
 
 def print_report(report: dict) -> None:
     SEP = "=" * 60
@@ -179,7 +186,9 @@ def print_report(report: dict) -> None:
         # By difficulty
         print("\n── Answer Quality by Difficulty ────────────────────────")
         for diff, metrics in report["answer_quality"].get("by_difficulty", {}).items():
-            print(f"  {diff:<14}: composite={metrics.get('composite_score', 0):.3f}  n={metrics.get('n', 0)}")
+            print(
+                f"  {diff:<14}: composite={metrics.get('composite_score', 0):.3f}  n={metrics.get('n', 0)}"
+            )
 
     print(f"\n{SEP}")
     print(f"  Report saved to: {report.get('output_path', 'N/A')}")
@@ -190,13 +199,16 @@ def print_report(report: dict) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run SR-RAG evaluation suite.")
     parser.add_argument("--output", default="data/processed/eval_report.json")
-    parser.add_argument("--reranker", action="store_true",
-                        help="Also run reranked retrieval for comparison")
-    parser.add_argument("--skip-answers", action="store_true",
-                        help="Skip answer quality eval (retrieval only)")
+    parser.add_argument(
+        "--reranker", action="store_true", help="Also run reranked retrieval for comparison"
+    )
+    parser.add_argument(
+        "--skip-answers", action="store_true", help="Skip answer quality eval (retrieval only)"
+    )
     args = parser.parse_args()
 
     logger.info("Loading eval questions...")

@@ -16,9 +16,9 @@ import logging
 import time
 from typing import Any
 
-from src.retrieval.retriever import Retriever
 from src.generation.answer_generator import generate_answer
-from src.generation.citations import validate_citations, format_answer_with_citations
+from src.generation.citations import format_answer_with_citations, validate_citations
+from src.retrieval.retriever import Retriever
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +43,13 @@ class SRRagPipeline:
             embedding_model=embedding_model,
         )
         self.llm_provider = llm_provider
-        self.llm_model    = llm_model
-        self._reranker    = None   # lazy-loaded on first use
+        self.llm_model = llm_model
+        self._reranker = None  # lazy-loaded on first use
 
         logger.info(
             "SRRagPipeline ready (collection=%s, provider=%s)",
-            collection_name, llm_provider or "from .env",
+            collection_name,
+            llm_provider or "from .env",
         )
 
     # ------------------------------------------------------------------
@@ -59,6 +60,7 @@ class SRRagPipeline:
     def reranker(self):
         if self._reranker is None:
             from src.retrieval.reranker import Reranker
+
             self._reranker = Reranker()
             logger.info("Reranker loaded.")
         return self._reranker
@@ -128,20 +130,20 @@ class SRRagPipeline:
         answer_full = format_answer_with_citations(gen["answer"], gen["sources"])
 
         result = {
-            "question":        question,
-            "answer":          gen["answer"],
-            "answer_full":     answer_full,
-            "sources":         gen["sources"],
+            "question": question,
+            "answer": gen["answer"],
+            "answer_full": answer_full,
+            "sources": gen["sources"],
             "citations_valid": citation_report["valid"],
-            "token_usage":     gen["token_usage"],
-            "retrieval_ms":    round(retrieval_ms, 1),
-            "rerank_ms":       round(rerank_ms, 1),
-            "generation_ms":   round(generation_ms, 1),
-            "total_ms":        round(total_ms, 1),
-            "provider":        gen["provider"],
-            "model":           gen["model"],
-            "refused":         gen.get("refused", False),
-            "use_reranker":    use_reranker,
+            "token_usage": gen["token_usage"],
+            "retrieval_ms": round(retrieval_ms, 1),
+            "rerank_ms": round(rerank_ms, 1),
+            "generation_ms": round(generation_ms, 1),
+            "total_ms": round(total_ms, 1),
+            "provider": gen["provider"],
+            "model": gen["model"],
+            "refused": gen.get("refused", False),
+            "use_reranker": use_reranker,
         }
 
         if include_raw_chunks:
@@ -149,7 +151,11 @@ class SRRagPipeline:
 
         logger.info(
             "Query done in %.0f ms (ret=%.0f, rerank=%.0f, gen=%.0f) | reranker=%s",
-            total_ms, retrieval_ms, rerank_ms, generation_ms, use_reranker,
+            total_ms,
+            retrieval_ms,
+            rerank_ms,
+            generation_ms,
+            use_reranker,
         )
         return result
 
@@ -179,18 +185,19 @@ class SRRagPipeline:
 
     def log_feedback(self, question: str, answer: str, helpful: bool) -> None:
         from src.generation.answer_generator import log_feedback
+
         log_feedback(question=question, answer=answer, helpful=helpful)
 
     def info(self) -> dict[str, Any]:
         col_info = self.retriever.collection_info()
         return {
-            "collection_name":  col_info["collection_name"],
-            "total_chunks":     col_info["total_chunks"],
-            "embedding_model":  col_info["embedding_model"],
-            "persist_dir":      col_info["persist_dir"],
-            "llm_provider":     self.llm_provider or "from .env",
-            "llm_model":        self.llm_model or "from .env",
-            "reranker_loaded":  self._reranker is not None,
+            "collection_name": col_info["collection_name"],
+            "total_chunks": col_info["total_chunks"],
+            "embedding_model": col_info["embedding_model"],
+            "persist_dir": col_info["persist_dir"],
+            "llm_provider": self.llm_provider or "from .env",
+            "llm_model": self.llm_model or "from .env",
+            "reranker_loaded": self._reranker is not None,
         }
 
     # ------------------------------------------------------------------
@@ -199,19 +206,23 @@ class SRRagPipeline:
 
     def _empty_result(self, question: str) -> dict[str, Any]:
         return {
-            "question":        question,
-            "answer":          "No relevant chunks found in the corpus for this question.",
-            "answer_full":     "No relevant chunks found in the corpus for this question.",
-            "sources":         [],
+            "question": question,
+            "answer": "No relevant chunks found in the corpus for this question.",
+            "answer_full": "No relevant chunks found in the corpus for this question.",
+            "sources": [],
             "citations_valid": True,
-            "token_usage":     {"prompt_tokens": 0, "completion_tokens": 0,
-                                "total_tokens": 0, "estimated_cost_usd": 0.0},
-            "retrieval_ms":    0.0,
-            "rerank_ms":       0.0,
-            "generation_ms":   0.0,
-            "total_ms":        0.0,
-            "provider":        "none",
-            "model":           "none",
-            "refused":         False,
-            "use_reranker":    False,
+            "token_usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "estimated_cost_usd": 0.0,
+            },
+            "retrieval_ms": 0.0,
+            "rerank_ms": 0.0,
+            "generation_ms": 0.0,
+            "total_ms": 0.0,
+            "provider": "none",
+            "model": "none",
+            "refused": False,
+            "use_reranker": False,
         }

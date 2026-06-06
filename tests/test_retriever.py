@@ -5,20 +5,22 @@ Run from project root: pytest tests/test_retriever.py -v
 """
 
 import pytest
+
 from src.retrieval.retriever import (
     Retriever,
+    _deduplicate,
     preprocess_query,
     retrieve,
-    _deduplicate,
 )
 
 VECTOR_STORE_DIR = "vector_store"
-COLLECTION_NAME  = "sr_papers"
+COLLECTION_NAME = "sr_papers"
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def retriever():
@@ -32,8 +34,8 @@ def retriever():
 # preprocess_query
 # ---------------------------------------------------------------------------
 
-class TestPreprocessQuery:
 
+class TestPreprocessQuery:
     def test_strips_whitespace(self):
         assert preprocess_query("  hello  ") == "hello"
 
@@ -56,8 +58,8 @@ class TestPreprocessQuery:
 # Retriever.retrieve
 # ---------------------------------------------------------------------------
 
-class TestRetriever:
 
+class TestRetriever:
     def test_returns_dict_with_required_keys(self, retriever):
         result = retriever.retrieve("perceptual loss SRGAN")
         for key in ["query", "results", "latency_ms", "total_chunks"]:
@@ -109,21 +111,20 @@ class TestRetriever:
 # Retriever.retrieve_by_method
 # ---------------------------------------------------------------------------
 
-class TestRetrieveByMethod:
 
+class TestRetrieveByMethod:
     def test_filters_to_correct_method(self, retriever):
         result = retriever.retrieve_by_method("loss function", "SRGAN")
         for r in result["results"]:
-            assert r["method"] == "SRGAN", \
-                f"Expected SRGAN, got {r['method']}"
+            assert r["method"] == "SRGAN", f"Expected SRGAN, got {r['method']}"
 
 
 # ---------------------------------------------------------------------------
 # Deduplication
 # ---------------------------------------------------------------------------
 
-class TestDeduplicate:
 
+class TestDeduplicate:
     def test_limits_per_page(self):
         chunks = [
             {"file_name": "a.pdf", "page_number": 1, "score": 0.9, "text": "t1"},
@@ -151,8 +152,8 @@ class TestDeduplicate:
 # collection_info
 # ---------------------------------------------------------------------------
 
-class TestCollectionInfo:
 
+class TestCollectionInfo:
     def test_returns_info_dict(self, retriever):
         info = retriever.collection_info()
         assert "collection_name" in info

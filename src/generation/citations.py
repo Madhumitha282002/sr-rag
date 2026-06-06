@@ -21,19 +21,17 @@ def format_citations(sources: list[dict[str, Any]]) -> list[str]:
     """
     citations = []
     for src in sources:
-        idx     = src.get("citation_index", "?")
-        method  = src.get("method", "Unknown")
+        idx = src.get("citation_index", "?")
+        method = src.get("method", "Unknown")
         authors = src.get("authors", "")
-        year    = src.get("year", "")
-        fname   = src.get("file_name", "")
-        page    = src.get("page_number", "")
+        year = src.get("year", "")
+        fname = src.get("file_name", "")
+        page = src.get("page_number", "")
 
         # Short author format: "Ledig et al." -> keep as-is; "Ledig, C." -> "Ledig et al."
         short_authors = _shorten_authors(authors)
 
-        citations.append(
-            f"[{idx}] {method} ({short_authors}, {year}) — {fname}, page {page}"
-        )
+        citations.append(f"[{idx}] {method} ({short_authors}, {year}) — {fname}, page {page}")
     return citations
 
 
@@ -62,15 +60,15 @@ def validate_citations(
         missing       : list of indices with no matching source
         unused        : list of source indices not cited in answer
     """
-    cited   = extract_cited_indices(answer)
+    cited = extract_cited_indices(answer)
     present = {src.get("citation_index") for src in sources}
     missing = [i for i in cited if i not in present]
-    unused  = [i for i in present if i not in cited]
+    unused = [i for i in present if i not in cited]
 
     return {
-        "valid":         len(missing) == 0,
+        "valid": len(missing) == 0,
         "cited_indices": cited,
-        "missing":       missing,
+        "missing": missing,
         "unused_sources": unused,
     }
 
@@ -94,6 +92,7 @@ def format_answer_with_citations(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _shorten_authors(authors: str) -> str:
     """
