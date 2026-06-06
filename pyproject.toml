@@ -1,0 +1,20 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",   # line too long — handled by formatter
+    "E402",   # module level import not at top of file (notebooks)
+    "F401",   # imported but unused (common in __init__.py)
+    "W291",   # trailing whitespace
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F811"]   # redefinition of unused name from import (fixtures)
+"notebooks/*" = ["E402", "F401", "E501"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
