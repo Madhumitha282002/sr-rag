@@ -23,6 +23,11 @@ EXTRACTED_PAGES_PKL = Path("data/processed/extracted_pages.pkl")
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+# Add this decorator to the whole class:
+@pytest.mark.skipif(
+    not EXTRACTED_PAGES_PKL.exists(),
+    reason="extracted_pages.pkl not found — run Day 3 notebook first"
+)
 
 
 @pytest.fixture(scope="module")
@@ -63,6 +68,8 @@ def tiny_pages():
             "word_count": 280,
         },
     ]
+
+
 
 
 # ---------------------------------------------------------------------------

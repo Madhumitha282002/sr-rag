@@ -136,7 +136,10 @@ class TestGetEmbeddingDim:
 # ---------------------------------------------------------------------------
 # embed_chunks
 # ---------------------------------------------------------------------------
-
+@pytest.mark.skipif(
+    not CHUNKS_PKL.exists(),
+    reason="chunks.pkl not found — run Day 4 notebook first"
+)
 
 class TestEmbedChunks:
     def test_embedding_key_added(self, embedded_chunks):
@@ -158,7 +161,10 @@ class TestEmbedChunks:
 # ---------------------------------------------------------------------------
 # index_chunks + query_collection
 # ---------------------------------------------------------------------------
-
+@pytest.mark.skipif(
+    not CHUNKS_PKL.exists(),
+    reason="chunks.pkl not found — run Day 4 notebook first"
+)
 
 class TestVectorStore:
     def test_index_and_count(self, fresh_collection, embedded_chunks):

@@ -5,7 +5,7 @@ Run from project root: pytest tests/test_retriever.py -v
 """
 
 import pytest
-
+from pathlib import Path
 from src.retrieval.retriever import (
     Retriever,
     _deduplicate,
@@ -15,6 +15,7 @@ from src.retrieval.retriever import (
 
 VECTOR_STORE_DIR = "vector_store"
 COLLECTION_NAME = "sr_papers"
+VECTOR_STORE_EXISTS = Path("vector_store").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -57,7 +58,10 @@ class TestPreprocessQuery:
 # ---------------------------------------------------------------------------
 # Retriever.retrieve
 # ---------------------------------------------------------------------------
-
+@pytest.mark.skipif(
+    not VECTOR_STORE_EXISTS,
+    reason="vector_store not found — run Day 5 notebook first"
+)
 
 class TestRetriever:
     def test_returns_dict_with_required_keys(self, retriever):
