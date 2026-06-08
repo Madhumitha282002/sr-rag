@@ -2,15 +2,13 @@
 
 A production-grade **Retrieval-Augmented Generation (RAG)** system for searching, comparing, and citing image super-resolution research papers using natural language.
 
-[![CI](https://github.com/YOUR_USERNAME/sr-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/sr-rag/actions/workflows/ci.yml)
+[![CI](https://github.com/Madhumitha282002/sr-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/Madhumitha282002/sr-rag/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
 ## Demo
-
-![SR-RAG Streamlit UI](docs/figures/app_screenshot_v1.png)
 
 **Ask natural language questions across 10 landmark SR papers and get grounded, cited answers:**
 
@@ -264,7 +262,7 @@ ruff format src/ api/ tests/
 
 ## Author
 
-**Madhumitha Katam** — Graduate Student, Arizona State University
+**Madhumitha Katam** Graduate Student, Arizona State University
 Applied ML · Computer Vision · RAG Systems
 
-[LinkedIn](https://www.linkedin.com/in/madhumithakatam/) · [GitHub](https://github.com/KMadhumitha282002)
+[LinkedIn](https://www.linkedin.com/in/madhumithakatam/) · [GitHub](https://github.com/Madhumitha282002)
